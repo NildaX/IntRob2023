@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+	
+	<arg name="camera_frontal" default="true" />
+	<param name="dist" type="int" value="5" />
+	
+	<arg name="camRGB" default="/bebop2/front_camera/rgb/image_raw" if="$(eval camera_frontal == true)" />
+	<arg name="camD" default="/bebop2/front_camera/depth/image_raw" if="$(eval camera_frontal == true)" />
+
+	<arg name="camRGB" default="/bebop2/bottom_camera/rgb/image_raw" if="$(eval camera_frontal == false)" />
+	<arg name="camD" default="/bebop2/bottom_camera/depth/image_raw" if="$(eval camera_frontal == false)" />
+	
+	<rosparam file="$(find image_viewer)/config/config.yaml" command="load" />
+	<rosparam file="$(find image_viewer)/config/bebop_cam.yaml" command="load" />
+	<rosparam file="$(find image_viewer)/config/bebop_calib.yaml" command="load" />
+
+	<node name="image_viewer" pkg="image_viewer" type="image_viewer.py" output="screen" >
+		
+		<remap from="/camera/rgb" to="$(arg camRGB)" />
+		<remap from="/camera/depth" to="$(arg camD)" />
+	
+	</node>
+
+</launch>

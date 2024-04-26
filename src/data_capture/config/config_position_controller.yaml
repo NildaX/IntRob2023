@@ -1,0 +1,19 @@
+Wpts: 
+  x: 0.0
+  y: 0.0
+  z: 0.0
+
+pitch:
+  kp: 0.1
+  ki: 0.01
+  kd: 1.0
+  
+yaw:
+  kp: 0.1
+  ki: 0.01
+  kd: 1.0
+
+altitude:
+  kp: 0.1
+  ki: 0.01
+  kd: 1.0

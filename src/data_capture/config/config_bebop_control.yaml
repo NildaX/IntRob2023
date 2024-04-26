@@ -1,0 +1,18 @@
+degrees: 50.0
+altitude: 2.5
+distance: 4.0
+
+Orien_gains:
+  kp: 0.1
+  ki: 0.01
+  kd: 1.0
+  
+alt_gains:
+  kp: 0.1
+  ki: 0.01
+  kd: 1.0
+
+dist_gains:
+  kp: 0.2
+  ki: 0.01
+  kd: 1.0

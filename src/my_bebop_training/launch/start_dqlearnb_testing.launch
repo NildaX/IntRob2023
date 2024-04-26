@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+    <!-- This version uses the openai_ros_b environments -->
+    <rosparam command="load" file="$(find my_bebop_training)/config/bebop_openai_dqlearn_params.yaml" />
+    <!-- Launch the training system -->
+    <node pkg="my_bebop_training" name="turtlebot3_maze" type="start_dqlearnb_testing.py" output="screen"/>
+</launch>

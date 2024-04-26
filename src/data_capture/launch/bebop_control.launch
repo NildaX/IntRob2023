@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+	
+	<rosparam file="$(find data_capture)/config/config_bebop_control.yaml" command="load" />
+	
+	<node name="bebop_control" pkg="data_capture" type="bebop_control.py" output="screen" >
+	</node>
+
+</launch>

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+	
+	<arg name="pathORB2" default="/home/nilda/IntRob2023/src/ORB_SLAM2" />
+	
+	<node pkg="ORB_SLAM2" type="RGBD" name="orb_slam2_rgbd" args="$(arg pathORB2)/Vocabulary/ORBvoc.bin  $(arg pathORB2)/Examples/ROS/ORB_SLAM2/config/real_sense.yaml" cwd="node" output="screen"> 
+		<remap from="/camera/rgb/image_raw" to="/camera/rgb/image_raw" />
+		<remap from="/camera/depth/image" to="/camera/depth/image" />
+	</node>
+
+</launch>

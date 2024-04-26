@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+	
+	<rosparam file="$(find data_capture)/config/config_dynamic_position_controller.yaml" command="load" />
+	
+	<node name="dynamic_position_controller" pkg="data_capture" type="dynamic_position_controller.py" output="screen" >
+	</node>
+
+</launch>

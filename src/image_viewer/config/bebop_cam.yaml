@@ -1,0 +1,12 @@
+Camera.width: 640
+Camera.height: 360
+
+Camera.fx: 374.823574
+Camera.fy: 374.843434
+Camera.cx: 319.586048
+Camera.cy: 179.395966
+
+Camera.k1: 0.0
+Camera.k2: 0.0
+Camera.p1: 0.0
+Camera.p2: 0.0

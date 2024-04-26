@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+	
+	<param name="dataset_path" type="string" value="/home/nilda/IntRob2023/deep_learning/Proyecto/" />
+
+	<node name="dataset_generation" pkg="image_viewer" type="dataset_generation_asus.py" output="screen" >
+	</node>
+
+</launch>

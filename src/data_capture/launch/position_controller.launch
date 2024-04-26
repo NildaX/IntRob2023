@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+	
+	<rosparam file="$(find data_capture)/config/config_position_controller.yaml" command="load" />
+	
+	<node name="position_controller" pkg="data_capture" type="position_controller.py" output="screen" >
+	</node>
+
+</launch>

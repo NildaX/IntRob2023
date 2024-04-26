@@ -1,0 +1,5 @@
+<launch>
+  <arg name="stage" default="2"/>
+  <param name="stage_number"  value="$(arg stage)"/>
+  <node pkg="bebop_dqn" type="bebop_dqn_stage_2" name="bebop_dqn_stage_2" output="screen" />
+</launch>

@@ -1,0 +1,14 @@
+pitch:
+  kp: 0.05
+  ki: 0.01
+  kd: 1.0
+  
+yaw:
+  kp: 0.05
+  ki: 0.01
+  kd: 1.0
+
+altitude:
+  kp: 0.1
+  ki: 0.01
+  kd: 1.0
