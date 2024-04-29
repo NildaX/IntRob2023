@@ -144,9 +144,11 @@ class image_viewer:
 		return math.degrees(math.atan2(cross_product, dot_product))
 
 	def callback(self,data):
+		#rospy.sleep(10)
 		frame = self.bridge.imgmsg_to_cv2(data, "bgr8")
 		scale = cv2.resize(frame, (520, 440))
 		distancias_objetos=[]
+		self.repre_state[5]=0
 		'''
 		distancias_objetos=[]
 		for i in range(len(self.x_points)):

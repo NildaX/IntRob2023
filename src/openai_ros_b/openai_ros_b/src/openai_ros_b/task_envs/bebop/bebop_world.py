@@ -140,6 +140,7 @@ class BebopWorldEnv(bebop_env.BebopEnv):
         odometry = self.get_odom()
         #estos van a ser a partir de las imagenes
         #cambiar
+        state_compute_=self.change_state()
         print("desde bebop_world", self.repre_state)
         self.previous_distance_from_des_point = self.repre_state[6]#self.get_distance_from_desired_point(odometry.pose.pose.position)
         self.previous_angle_from_des_point = self.repre_state[7]#self.get_heading_from_desired_point(odometry.pose.pose.position,odometry.pose.pose.orientation)
@@ -291,6 +292,7 @@ class BebopWorldEnv(bebop_env.BebopEnv):
     def _compute_reward(self, observations,done):
         #compute_state=
         print("compute reward", self.repre_state)
+        print("discrete", self.repre_state_discrete)
         visibility_reward=100*self.repre_state[5]
         if self.repre_state[5]==1:
             distance_reward=-self.repre_state[6]*10 #distance_to_goal
