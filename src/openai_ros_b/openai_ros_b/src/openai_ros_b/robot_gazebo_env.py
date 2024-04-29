@@ -223,6 +223,10 @@ class RobotGazeboEnv(gym.Env):
         rospy.logdebug("RESET SIM END")
         #print("return true")
         return True
+    def return_state_discrete(self):
+        """Calculates the reward to give based on the observations given.
+        """
+        raise NotImplementedError()
 
     def _set_init_pose(self):
         """Sets the Robot in its init pose

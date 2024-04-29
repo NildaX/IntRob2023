@@ -42,6 +42,8 @@ class DeepQ:
         self.Ovr = rospy.Subscriber('/turtlebot/save', Int8, self.flag)
         self.save_forward=1
         os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
+        self.red_defined=[[]]
+        self.red_actions=[]
     def flag(self,msg):
         self.save_forward = msg.data
     def initNetworks(self, hiddenLayers, training=True, model_path=None):
@@ -183,7 +185,9 @@ class DeepQ:
             return reward + self.discountFactor * self.getMaxQ(qValuesNewState)
 
     # select the action with the highest Q value
-    def selectAction(self, qValues, explorationRate):
+    def selectAction(self, qValues, explorationRate,disc_state):
+        #--aqui debe de decidir si elegir la accion de la red o no
+        print("space",disc_state)
         rand = random.random()
         if rand < explorationRate:
             action = np.random.randint(0, self.output_size)

@@ -310,6 +310,8 @@ class BebopWorldEnv(bebop_env.BebopEnv):
         rospy.logdebug("Cumulated_steps=" + str(self.cumulated_steps))
 
         return reward
+    def return_state_discrete(self):
+        return self.repre_state_discrete
 
     # Internal TaskEnv Methods
     ##----------------Aqui seria cambiar por camara de profundidad
