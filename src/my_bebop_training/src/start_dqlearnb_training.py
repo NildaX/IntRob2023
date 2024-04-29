@@ -180,6 +180,8 @@ if __name__ == '__main__':
             #print("after newObservation")
             success_episode, failure_episode = env.get_episode_status()
             #print("after newobservation succes")
+            print("cumulated reward",cumulated_reward,"reward",reward)
+            #rospy.sleep(100)
             cumulated_reward += reward
             if highest_reward < cumulated_reward:
                 highest_reward = cumulated_reward

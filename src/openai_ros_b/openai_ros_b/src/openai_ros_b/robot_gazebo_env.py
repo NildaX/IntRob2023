@@ -78,7 +78,7 @@ class RobotGazeboEnv(gym.Env):
         repre_state_step=self._get_repre_state()
         self.repre_state_gazebo = ','.join(map(str, repre_state_step))
         reward = self._compute_reward(obs, done)
-
+        print("en step",reward,"cumulated episode reward",self.cumulated_episode_reward)
         episode_status = self._get_episode_success_failure_status()
         self.episode_success = episode_status[0]
         self.episode_failure = episode_status[1]

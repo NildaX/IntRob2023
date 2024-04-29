@@ -290,13 +290,17 @@ class BebopWorldEnv(bebop_env.BebopEnv):
 
     def _compute_reward(self, observations,done):
         #compute_state=
-        distance_reward = -self.weights['distance_to_goal'] * self.repre_state[6] #distance_to_goal
-        angle_reward = -self.weights['angle_to_goal'] * self.repre_state[7] #angle_to_goal
-        altitude_reward = -self.weights['altitude'] *self.repre_state[8] # altitude
-        velocity_reward = -self.weights['linear_velocity_x'] * self.repre_state[9] - self.weights['linear_velocity_y'] * self.repre_state[10]  -self.weights['linear_velocity_z'] * self.repre_state[11]
-        reward = distance_reward + angle_reward + altitude_reward + velocity_reward
-        if self.repre_state[5]==0:
-            reward=-200 ###penality
+        print("compute reward", self.repre_state)
+        visibility_reward=100*self.repre_state[5]
+        if self.repre_state[5]==1:
+            distance_reward=-self.repre_state[6]*10 #distance_to_goal
+            angle_reward=-(abs(self.repre_state[7]))*10 #angle_to_goal
+        else:
+            distance_reward=-100 #distance_to_goal
+            angle_reward=-100 #angle_to_goal
+        distances_reward=(self.repre_state[0]+self.repre_state[1]+self.repre_state[2])*5
+        print(distance_reward,angle_reward,visibility_reward,distances_reward)
+        reward = round(distance_reward + angle_reward + visibility_reward+distances_reward,2)
         rospy.logdebug("reward=" + str(reward))
         self.cumulated_reward += reward
         rospy.logdebug("Cumulated_reward=" + str(self.cumulated_reward))
