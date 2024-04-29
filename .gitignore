@@ -2,7 +2,7 @@
 /build
 /deep_learning
 /libs
-/src/openai_projects/bebop_openai_ros_example/training_results
+/src/openai_projects/bebop_openai_ros_example/training_results/*
 /src/image_viewer/src/NYU_FCRN-checkpoint
 /src/dataset
-/home/nilda/IntRob2023/src/openai_ros_b/openai_ros_b/src/openai_ros_b/task_envs/bebop/__pycache__/
+/src/openai_ros_b/openai_ros_b/src/openai_ros_b/task_envs/bebop/__pycache__/
