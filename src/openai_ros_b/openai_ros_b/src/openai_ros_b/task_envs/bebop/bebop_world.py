@@ -138,6 +138,7 @@ class BebopWorldEnv(bebop_env.BebopEnv):
         #self.publish_filtered_laser_scan(laser_original_data=laser_scan,new_filtered_laser_range=discretized_ranges)
 
         odometry = self.get_odom()
+        state_compute_=self.change_state()
         #estos van a ser a partir de las imagenes
         #cambiar
         print("desde bebop_world", self.repre_state)

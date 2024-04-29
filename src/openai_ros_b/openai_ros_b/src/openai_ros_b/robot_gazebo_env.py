@@ -105,6 +105,7 @@ class RobotGazeboEnv(gym.Env):
             self._reset_sim()
         else:
             self._set_init_pose()
+            rospy.sleep(2)
         #print("_init_env_variables")
         self._init_env_variables()
         #print("_update_episode")

@@ -321,38 +321,42 @@ class BebopEnv(robot_gazebo_env.RobotGazeboEnv):
         
     def change_state(self):
         self.repre_state[5]=0
-        scale = cv2.resize(self.image_raw_nueva, (520, 440))
         self.repre_state[0]=round(self.get_distance(150,150,350,220),2)#1 centro
         self.repre_state[1]=round(self.get_distance(0,0,260,220),2) #2 top left
         self.repre_state[2]=round(self.get_distance(260,0,520,220),2)#3 top right
         self.repre_state[3]=round(self.get_distance(0,220,260,440),2)#4 bottom left
         self.repre_state[4]=round(self.get_distance(260,220,520,440),2)#5 bottom right
         #print(self.repre_state)
-        scale=cv2.circle(scale, (260, 440), 20, (255, 0, 0), -1) #robot
-        scale=cv2.circle(scale, (260, 220), 3, (255, 0, 0), -1) #centro
-        scale=cv2.line(scale,(260,440),(260,220),(255,0,0),4) #linea de robot a centro
-        results = self.model(scale,verbose=False)[0]
-        for result in results.boxes.data.tolist():
-            x1, y1, x2, y2, score, class_id = result
-            cx = int((x1 + x2)/2)
-            cy=int((y1+y2)/2)
-            if score > self.threshold:
-                cv2.rectangle(scale, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 4)
-                cv2.circle(scale, (cx, cy), 3, (0, 255, 0), -1)
-                cv2.putText(scale, self.class_name_dict[int(class_id)].upper(), (int(x1), int(y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3, cv2.LINE_AA)#print("detect an object")
-                if class_id==0: #encontro ball#print("encontro goal")
-                    self.repre_state[6]= round(self.get_distance(int(x1),int(y1),int(x2),int(y2)),2)
-                    self.repre_state[5]=1
-                    rospy.logerr("GOAAAAL ==>" + str(self.repre_state[5]))
-                    scale=cv2.circle(scale, (cx, cy), 3, (255, 0, 0), -1) #objetiv
-                    scale=cv2.line(scale,(260,440),(cx,cy),(255,0,0),4) #linea de robot a objetivo
-                    scale=cv2.line(scale,(cx,cy),(260,220),(255,0,0),4) #linea de objetivo a centro
-                    line1_endpoints = ((260, 440), (260, 220)) 
-                    line2_endpoints = ((260, 440), (cx, cy))# Calculate the vectors representing the line segments
-                    vector1 = (line1_endpoints[1][0] - line1_endpoints[0][0], line1_endpoints[1][1] - line1_endpoints[0][1])
-                    vector2 = (line2_endpoints[1][0] - line2_endpoints[0][0], line2_endpoints[1][1] - line2_endpoints[0][1])# Calculate the signed angles between the lines
-                    angle1 = self.calculate_signed_angle(vector2, vector1)
-                    self.repre_state[7]=round(angle1,2)
+        #scale=cv2.circle(scale, (260, 440), 20, (255, 0, 0), -1) #robot
+        #scale=cv2.circle(scale, (260, 220), 3, (255, 0, 0), -1) #centro
+        #scale=cv2.line(scale,(260,440),(260,220),(255,0,0),4) #linea de robot a centro
+        contador=0
+        max_contador=10
+        while contador<max_contador and self.repre_state[5]==0:
+            scale = cv2.resize(self.image_raw_nueva, (520, 440))
+            results = self.model(scale,verbose=False)[0]
+            for result in results.boxes.data.tolist():
+                x1, y1, x2, y2, score, class_id = result
+                cx = int((x1 + x2)/2)
+                cy=int((y1+y2)/2)
+                if score > self.threshold:
+                    cv2.rectangle(scale, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 4)
+                    cv2.circle(scale, (cx, cy), 3, (0, 255, 0), -1)
+                    cv2.putText(scale, self.class_name_dict[int(class_id)].upper(), (int(x1), int(y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3, cv2.LINE_AA)#print("detect an object")
+                    if class_id==0: #encontro ball#print("encontro goal")
+                        self.repre_state[6]= round(self.get_distance(int(x1),int(y1),int(x2),int(y2)),2)
+                        self.repre_state[5]=1
+                        rospy.logerr("GOAAAAL ==>" + str(self.repre_state[5]))
+                        scale=cv2.circle(scale, (cx, cy), 3, (255, 0, 0), -1) #objetiv
+                        scale=cv2.line(scale,(260,440),(cx,cy),(255,0,0),4) #linea de robot a objetivo
+                        scale=cv2.line(scale,(cx,cy),(260,220),(255,0,0),4) #linea de objetivo a centro
+                        line1_endpoints = ((260, 440), (260, 220)) 
+                        line2_endpoints = ((260, 440), (cx, cy))# Calculate the vectors representing the line segments
+                        vector1 = (line1_endpoints[1][0] - line1_endpoints[0][0], line1_endpoints[1][1] - line1_endpoints[0][1])
+                        vector2 = (line2_endpoints[1][0] - line2_endpoints[0][0], line2_endpoints[1][1] - line2_endpoints[0][1])# Calculate the signed angles between the lines
+                        angle1 = self.calculate_signed_angle(vector2, vector1)
+                        self.repre_state[7]=round(angle1,2)
+            contador+=1
         if self.repre_state[5]!=1:
             self.repre_state[6]=999
             self.repre_state[7]=999
