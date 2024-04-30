@@ -42,8 +42,11 @@ class DeepQ:
         self.Ovr = rospy.Subscriber('/turtlebot/save', Int8, self.flag)
         self.save_forward=1
         os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
-        self.red_defined=[[]]
-        self.red_actions=[]
+
+        self.red_defined=[[1,1,1,1,1,1,1,0,0],[0,0,0,0,0,0,1,1,0],[0,0,0,0,0,0,1,1,1],[0,0,0,0,0,0,1,2,1],[0,0,0,0,0,0,1,1,2],[0,0,0,0,0,0,1,2,2],[0,0,0,0,0,1,0,2,0], [1,1,1,1,1,1,0,2,0],[0,0,0,0,0,1,0,1,0],[1,1,1,1,1,1,0,1,0],[0,0,0,0,0,1,1,2,0],[1,1,1,1,1,1,1,2,0],[0,0,0,0,0,1,1,1,0],[1,1,1,1,1,1,1,1,0] ]
+        self.red_actions=[2,3,0,0,1,1,7,7,6,6,5,5,4,4]
+
+
     def flag(self,msg):
         self.save_forward = msg.data
     def initNetworks(self, hiddenLayers, training=True, model_path=None):
@@ -188,11 +191,17 @@ class DeepQ:
     def selectAction(self, qValues, explorationRate,disc_state):
         #--aqui debe de decidir si elegir la accion de la red o no
         print("space",disc_state)
-        rand = random.random()
-        if rand < explorationRate:
-            action = np.random.randint(0, self.output_size)
+        if disc_state in self.red_defined:
+            index = self.red_defined.index(disc_state)
+            action=self.red_actions[index]
+            print(f"The discrete state exists in bayesian at index",index,action)
         else:
-            action = self.getMaxIndex(qValues)
+            print(f"The discrete state does not exist in bayesian.")
+            rand = random.random()
+            if rand < explorationRate:
+                action = np.random.randint(0, self.output_size)
+            else:
+                action = self.getMaxIndex(qValues)
             ##--------------------------------------
             '''
             if action==0:
