@@ -171,10 +171,14 @@ class image_viewer:
 
 
 		#para dibujar las lineas 
-		scale=cv2.circle(scale, (260, 440), 20, (255, 0, 0), -1) #robot
-		scale=cv2.circle(scale, (260, 220), 3, (255, 0, 0), -1) #centro
-		scale=cv2.line(scale,(260,440),(260,220),(255,0,0),4) #linea de robot a centro
-		
+		#scale=cv2.circle(scale, (260, 440), 20, (255, 0, 0), -1) #robot
+		#scale=cv2.circle(scale, (260, 220), 3, (255, 0, 0), -1) #centro
+		#scale=cv2.line(scale,(260,440),(260,220),(255,0,0),4) #linea de robot a centro
+		scale=cv2.rectangle(scale, (int(150), int(150)), (int(350), int(220)), (0, 255, 0), 4)
+		scale=cv2.rectangle(scale, (int(0), int(0)), (int(260), int(220)), (0, 255, 0), 4)
+		scale=cv2.rectangle(scale, (int(260), int(0)), (int(520), int(220)), (0, 255, 0), 4)
+		scale=cv2.rectangle(scale, (int(0), int(220)), (int(260), int(440)), (0, 255, 0), 4)
+		scale=cv2.rectangle(scale, (int(260), int(220)), (int(520), int(440)), (0, 255, 0), 4)
 		msg = Float32MultiArray()
 		msg.data = distancias_objetos
 		#self.pub_objects_distances.publish(msg)

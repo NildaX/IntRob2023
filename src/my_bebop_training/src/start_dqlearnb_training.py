@@ -87,7 +87,7 @@ if __name__ == '__main__':
         # PARAMETER LIST
         epochs = rospy.get_param("/bebop/nepisodes")  # 1000
         steps = rospy.get_param("/bebop/nsteps")  # 1000
-        updateTargetNetwork = 10000
+        updateTargetNetwork = 4#10000
         explorationRate = rospy.get_param("/bebop/epsilon")  # 1
         minibatch_size = 64
         learnStart = 64
@@ -150,6 +150,7 @@ if __name__ == '__main__':
     # start iterating from 'current epoch'.
     deepQ.printNetwork()
     #print("-----------before epoch----------------")
+    print("updateTargetNetwork",updateTargetNetwork)
     for epoch in range(current_epoch + 1, epochs + 1, 1):
         print("Episode Number:",epoch)
         print("\n")
@@ -171,12 +172,15 @@ if __name__ == '__main__':
             # env.render()
             _observation = numpy.array(_observation)
             #print("before qvalues")
-            qValues = deepQ.getQValues(_observation)
+            state_discre=env.return_state_discrete()
+            qValues = deepQ.getQValues(_observation,state_discre)
             #print("before action")
-            print("discrete desde start training",env.return_state_discrete())
-            action = deepQ.selectAction(qValues, explorationRate,env.return_state_discrete())
+            
+            print("discrete desde start training",)
+            action = deepQ.selectAction(qValues, explorationRate,state_discre)
             #print("action",action)
-            newObservation, reward, done, info = env.step(action)
+            newObservation,reward, done, info = env.step(action)
+            newstate_discre=env.return_state_discrete()
             state_representation=env.get_state_gazebo()
             #print("after newObservation")
             success_episode, failure_episode = env.get_episode_status()
@@ -187,7 +191,7 @@ if __name__ == '__main__':
             if highest_reward < cumulated_reward:
                 highest_reward = cumulated_reward
 
-            deepQ.addMemory(_observation, action, reward, newObservation, done)
+            deepQ.addMemory(_observation,state_discre, action, reward, newObservation,newstate_discre, done)
             #print("after addmemory",done)
             if stepCounter >= learnStart:
                 if stepCounter <= updateTargetNetwork:
