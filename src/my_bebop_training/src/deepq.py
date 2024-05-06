@@ -161,7 +161,7 @@ class DeepQ:
         return action_probs[0].numpy()#action#predicted[0]
 
     def getTargetQValues(self, state):
-        predicted = self.targetModel.predict(state)#.reshape(1, len(state)))
+        #predicted = self.targetModel.predict(state)#.reshape(1, len(state)))
 
         state_tensor = tf.convert_to_tensor(state)
         state_tensor = tf.expand_dims(state_tensor, 0)
