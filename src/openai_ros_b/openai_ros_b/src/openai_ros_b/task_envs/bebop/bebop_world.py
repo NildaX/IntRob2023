@@ -26,6 +26,18 @@ outdir = pkg_path + '/training_results/dqlearn'
 GAZEBO_WORLD_LAUNCH_NAME = "test_bebop_world"
 
 
+###----aqui voy a tener que poner lo necesario para poder representar el estado como un vector de 3200 valores antes de pasar a la red para obtener 8 valores
+from tensorflow.keras import layers
+from tensorflow import keras
+import tensorflow as tf
+from keras import models
+from tensorflow.keras import Sequential, optimizers
+from tensorflow.keras.layers import Dense, Activation, LeakyReLU, Dropout, Conv2D, MaxPooling2D, Flatten, Dropout, Lambda
+from tensorflow.keras.models import load_model
+from tensorflow.keras.regularizers import l2
+import gc
+import torch
+import numpy as np
 class BebopWorldEnv(bebop_env.BebopEnv):
     def __init__(self):
         """
@@ -107,6 +119,10 @@ class BebopWorldEnv(bebop_env.BebopEnv):
         self.bridge = CvBridge()
         self.contador_inicio=0
         self.weights = {'distance_to_goal': 0.5, 'angle_to_goal': 0.3, 'altitude': 0.1, 'linear_velocity_x': 0.08, 'linear_velocity_y': 0.02, 'linear_velocity_z': 0.02}
+        torch.cuda.empty_cache()
+        gc.collect()
+        self.model_to_state=self.createModel_concatenate(9)
+        self.model_to_state.summary()
     def _set_init_pose(self):
         """Sets the Robot in its init pose
         """
@@ -144,7 +160,7 @@ class BebopWorldEnv(bebop_env.BebopEnv):
         print("desde bebop_world", self.repre_state)
         self.previous_distance_from_des_point = self.repre_state[6]#self.get_distance_from_desired_point(odometry.pose.pose.position)
         self.previous_angle_from_des_point = self.repre_state[7]#self.get_heading_from_desired_point(odometry.pose.pose.position,odometry.pose.pose.orientation)
-
+        print("end init env variable")
     def _set_action(self, action):
         """
         This set action will Set the linear and angular speed of the turtlebot2
@@ -176,6 +192,23 @@ class BebopWorldEnv(bebop_env.BebopEnv):
 
         rospy.logdebug("END Set Action ==>" + str(action))
 
+    def createModel_concatenate(self,values_state_size):
+        # Network defined by the Deepmind paper
+        inputs = layers.Input(shape=(84, 84, 3,))
+        # Convolutions on the frames on the screen
+        layer1 = layers.Conv2D(32, 8, strides=4, padding="same", activation="relu")(inputs)
+        layer2 = layers.Conv2D(64, 4, strides=2, activation="relu")(layer1)
+        layer3 = layers.Conv2D(64, 3, strides=1, activation="relu")(layer2)
+        cnn_flattened = layers.Flatten()(layer3)
+        # Define input for values_state
+        values_input = layers.Input(shape=(values_state_size,))
+        values_dense = layers.Dense(64, activation='relu')(values_input)
+        # Concatenate flattened CNN output with values_state
+        concatenated_features = layers.Concatenate()([cnn_flattened, values_dense])
+        # Define model
+        model = models.Model(inputs=[inputs, values_input], outputs=concatenated_features)
+        print("create concatenate")
+        return model
     def _get_obs(self):
         """
         Here we define what sensor data defines our robots observations
@@ -186,24 +219,25 @@ class BebopWorldEnv(bebop_env.BebopEnv):
         #print("-----------------------------------------------------------def _get_obs----------------------------------------------------")
         frame = self.image_raw_nueva
         state_compute_=self.change_state()
-        #print(frame.shape)
-        rospy.logdebug("Start Get Observation ==>")
-        # We get the laser scan data
-        #laser_scan = self.get_laser_scan()
-        #discretized_observations = self.discretize_scan_observation(laser_scan, self.new_ranges)
 
-        # We get the odometry so that SumitXL knows where it is.
-        #odometry = self.get_odom()
-        #odometry.pose.pose.position.y
-        #print("odometry")
-        #print(odometry)# We round to only two decimals to avoid very big Observation space
+        state_tensor = tf.convert_to_tensor(frame)
+        state_tensor = tf.expand_dims(state_tensor, 0)
+
+        additional_data_tensor = tf.convert_to_tensor(state_compute_)
+        additional_data_tensor = tf.expand_dims(additional_data_tensor, 0)
+        print("resultado")
+        resultado=self.model_to_state([state_tensor, additional_data_tensor], training=False)
+        
+        rospy.logdebug("Start Get Observation ==>")
         distance_to_des_point = round(self.previous_distance_from_des_point, 2)
         angle_to_des_point = round(self.previous_angle_from_des_point, 2)
         #observations = discretized_observations + [distance_to_des_point, angle_to_des_point]
 
         rospy.logwarn("Observations==>"+ str(distance_to_des_point)+","+str(angle_to_des_point))
         rospy.logwarn("END Get Observation ==>")
-        return frame #observations
+
+
+        return resultado[0].numpy() #observations
     def _get_repre_state(self):
         return self.repre_state
     def _get_episode_success_failure_status(self):

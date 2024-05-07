@@ -13,6 +13,7 @@ from tensorflow.keras import layers
 from tensorflow import keras
 import tensorflow as tf
 import os
+import torch
 class DeepQ:
     """
     DQN abstraction.
@@ -45,6 +46,7 @@ class DeepQ:
 
         self.red_defined=[[1,1,1,1,1,1,1,0,0],[0,0,0,0,0,0,1,1,0],[0,0,0,0,0,0,1,1,1],[0,0,0,0,0,0,1,2,1],[0,0,0,0,0,0,1,1,2],[0,0,0,0,0,0,1,2,2],[0,0,0,0,0,1,0,2,0], [1,1,1,1,1,1,0,2,0],[0,0,0,0,0,1,0,1,0],[1,1,1,1,1,1,0,1,0],[0,0,0,0,0,1,1,2,0],[1,1,1,1,1,1,1,2,0],[0,0,0,0,0,1,1,1,0],[1,1,1,1,1,1,1,1,0] ]
         self.red_actions=[2,3,0,0,1,1,7,7,6,6,5,5,4,4]#actions
+        torch.cuda.empty_cache()
 
 
     def flag(self,msg):
@@ -106,28 +108,10 @@ class DeepQ:
         model.summary()
         return model
     def createModel(self, hiddenLayers, activationType, learningRate):
-        # Network defined by the Deepmind paper
-        inputs = layers.Input(shape=(84, 84, 3,))
-        # Convolutions on the frames on the screen
-        layer1 = layers.Conv2D(32, 8, strides=4, padding="same",activation="relu")(inputs)
-        layer2 = layers.Conv2D(64, 4, strides=2, activation="relu")(layer1)
-        layer3 = layers.Conv2D(64, 3, strides=1, activation="relu")(layer2)
-
-        #layer4 = layers.Flatten()(layer3)
-        # Flatten the output of the last convolutional layer
-        cnn_flattened = layers.Flatten()(layer3)
-
-        # Additional input for the array of 11 values
-        auxiliary_input = layers.Input(shape=(9,))
-
-        # Concatenate the flattened CNN output and the auxiliary input
-        concatenated = layers.Concatenate()([cnn_flattened, auxiliary_input])
-
-        # Fully connected layers
-
-        layer5 = layers.Dense(512, activation="relu")(concatenated)
-        action = layers.Dense(self.output_size, activation="linear")(layer5)
-        model=keras.Model(inputs=[inputs, auxiliary_input], outputs=action)
+        inputs = layers.Input(shape=(1,3200))
+        layer5 = layers.Dense(512, activation="relu")(inputs)
+        action = layers.Dense(8, activation="linear")(layer5)
+        model=keras.Model(inputs=inputs, outputs=action)
         optimizer = optimizers.RMSprop(lr=learningRate, rho=0.9, epsilon=1e-06)
         model.compile(loss="mse", optimizer=optimizer)
         return model
@@ -157,17 +141,12 @@ class DeepQ:
         self.backupNetwork(self.model, self.targetModel)
 
     # predict Q values for all the actions
-    def getQValues(self, state,additional_data):
+    def getQValues(self, state):
         #print("shape de state",state.shape)
         state_tensor = tf.convert_to_tensor(state)
         state_tensor = tf.expand_dims(state_tensor, 0)
 
-        additional_data_tensor = tf.convert_to_tensor(additional_data)
-        additional_data_tensor = tf.expand_dims(additional_data_tensor, 0)
-
-
-
-        action_probs = self.model([state_tensor, additional_data_tensor], training=False)
+        action_probs = self.model([state_tensor], training=False)
         # Take best action
         #action = tf.argmax(action_probs[0]).numpy()
 
@@ -176,16 +155,13 @@ class DeepQ:
         #print("termino predict")
         return action_probs[0].numpy()#action#predicted[0]
 
-    def getTargetQValues(self, state,additional_data):
+    def getTargetQValues(self, state):
         #predicted = self.targetModel.predict(state)#.reshape(1, len(state)))
 
         state_tensor = tf.convert_to_tensor(state)
         state_tensor = tf.expand_dims(state_tensor, 0)
 
-        additional_data_tensor = tf.convert_to_tensor(additional_data)
-        additional_data_tensor = tf.expand_dims(additional_data_tensor, 0)
-
-        action_probs = self.targetModel([state_tensor, additional_data_tensor], training=False)
+        action_probs = self.targetModel([state_tensor], training=False)
         # Take best action
         #action = tf.argmax(action_probs[0]).numpy()
 
@@ -260,8 +236,8 @@ class DeepQ:
                 return i
             i += 1
 
-    def addMemory(self, state, state_discre, action, reward, newState, newDiscrete, isFinal):
-        self.memory.addMemory(state, state_discre, action, reward, newState,newDiscrete, isFinal)
+    def addMemory(self, state, action, reward, newState, isFinal):
+        self.memory.addMemory(state, action, reward, newState, isFinal)
 
     def learnOnLastState(self):
         if self.memory.getCurrentSize() >= 1:
@@ -272,20 +248,18 @@ class DeepQ:
         if self.memory.getCurrentSize() > self.learnStart:
             # learn in batches of 128
             miniBatch = self.memory.getMiniBatch(miniBatchSize)
-            X_batch = np.empty([0, 84,84,3], dtype=np.float64)
+            X_batch = np.empty([0, 3200], dtype=np.float64)
             Y_batch = np.empty((0, self.output_size), dtype=np.float64)
             #print(X_batch.shape,Y_batch.shape)
             for sample in miniBatch:
                 isFinal = sample['isFinal']
                 state = sample['state']
-                state_discre = sample['state_discre']
                 #print("#------------------- state",state.shape)
                 action = sample['action']
                 reward = sample['reward']
                 newState = sample['newState']
-                newStateD = sample['newDiscrete']
 
-                qValues = self.getQValues(state,state_discre)
+                qValues = self.getQValues(state)
                 if useTargetNetwork:
                     qValuesNewState = self.getTargetQValues(newState)
                 else:

@@ -369,7 +369,7 @@ class BebopEnv(robot_gazebo_env.RobotGazeboEnv):
         ##---discrete, disctances, see goal 0-1, angle to goal 0,1,2, altitude 0,1,2
         self.discretized_state(self.repre_state)
 
-        return True
+        return self.discretized_state
         '''
         try:
             ros_image_msg = self.bridge.cv2_to_imgmsg(scale, "bgr8")

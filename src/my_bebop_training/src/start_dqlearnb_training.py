@@ -89,7 +89,7 @@ if __name__ == '__main__':
         steps = rospy.get_param("/bebop/nsteps")  # 1000
         updateTargetNetwork = 4#10000
         explorationRate = rospy.get_param("/bebop/epsilon")  # 1
-        minibatch_size = 64
+        minibatch_size = 32
         learnStart = 64
         learningRate = rospy.get_param("/bebop/alpha")  # 0.00025
         discountFactor = rospy.get_param("/bebop/gamma")  # 0.99
@@ -173,15 +173,13 @@ if __name__ == '__main__':
             _observation = numpy.array(_observation)
             #print("before qvalues")
             state_discre=env.return_state_discrete()
-            qValues = deepQ.getQValues(_observation,state_discre)
+            qValues = deepQ.getQValues(_observation)
             #print("before action")
             
             print("discrete desde start training",)
             action = deepQ.selectAction(qValues, explorationRate,state_discre)
             #print("action",action)
             newObservation,reward, done, info = env.step(action)
-            newstate_discre=env.return_state_discrete()
-            state_representation=env.get_state_gazebo()
             #print("after newObservation")
             success_episode, failure_episode = env.get_episode_status()
             #print("after newobservation succes")
@@ -191,7 +189,7 @@ if __name__ == '__main__':
             if highest_reward < cumulated_reward:
                 highest_reward = cumulated_reward
 
-            deepQ.addMemory(_observation,state_discre, action, reward, newObservation,newstate_discre, done)
+            deepQ.addMemory(_observation, action, reward, newObservation, done)
             #print("after addmemory",done)
             if stepCounter >= learnStart:
                 if stepCounter <= updateTargetNetwork:
@@ -202,7 +200,7 @@ if __name__ == '__main__':
             _observation = newObservation
 
             if done:
-                data = [epoch, success_episode, failure_episode, cumulated_reward, episode_step + 1,state_representation]
+                data = [epoch, success_episode, failure_episode, cumulated_reward, episode_step + 1]
                 utils.record_data(data, outdir, gazebo_world_launch_name)
                 print("EPISODE REWARD: ", cumulated_reward)
                 print("EPISODE STEP: ", episode_step + 1)
