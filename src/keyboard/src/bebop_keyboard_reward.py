@@ -262,6 +262,7 @@ class keyboard:
 				if key == keys.X:
 					print('		Last Command Send: Termino')
 					print('FINAL CUMULATED REWARD',self.cumulated_reward)
+					bandera=1
 				if key == keys.C:
 					self.OvR_msg = 10
 					self.pub_override.publish(self.OvR_msg)
