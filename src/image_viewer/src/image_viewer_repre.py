@@ -40,7 +40,14 @@ class image_viewer:
 		self.image_pub = rospy.Publisher('/camera/rgb/modified', Image, queue_size=10)
 		##-- todos los estados
 		self.pub_state = rospy.Publisher('/camera/state', Float32MultiArray, queue_size=10)
+
+		self.pub_state_discrete = rospy.Publisher('/camera/state_discrete', Float32MultiArray, queue_size=10)
+
+
+
 		self.repre_state=[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+		self.repre_state_discrete=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+
 		#IN this orden: 0: center, 1:top left, 2:top right, 3:bottom left, 4:bottom right, 5:research goal, 6:distance, 7:angle, 8:altitude
 		#9:linear velocity x, 10:linear velocity y,11:linear velocity z, 12:roll, 13:pitch,, 14:yaw
 		#{'center':0.0, 'section1':0.0,'section2':0.0,'section3':0.0,'section4':0.0,'re'}
@@ -174,11 +181,11 @@ class image_viewer:
 		#scale=cv2.circle(scale, (260, 440), 20, (255, 0, 0), -1) #robot
 		#scale=cv2.circle(scale, (260, 220), 3, (255, 0, 0), -1) #centro
 		#scale=cv2.line(scale,(260,440),(260,220),(255,0,0),4) #linea de robot a centro
-		scale=cv2.rectangle(scale, (int(150), int(150)), (int(350), int(220)), (0, 255, 0), 4)
-		scale=cv2.rectangle(scale, (int(0), int(0)), (int(260), int(220)), (0, 255, 0), 4)
-		scale=cv2.rectangle(scale, (int(260), int(0)), (int(520), int(220)), (0, 255, 0), 4)
-		scale=cv2.rectangle(scale, (int(0), int(220)), (int(260), int(440)), (0, 255, 0), 4)
-		scale=cv2.rectangle(scale, (int(260), int(220)), (int(520), int(440)), (0, 255, 0), 4)
+		#scale=cv2.rectangle(scale, (int(150), int(150)), (int(350), int(220)), (0, 255, 0), 4)
+		#scale=cv2.rectangle(scale, (int(0), int(0)), (int(260), int(220)), (0, 255, 0), 4)
+		#scale=cv2.rectangle(scale, (int(260), int(0)), (int(520), int(220)), (0, 255, 0), 4)
+		#scale=cv2.rectangle(scale, (int(0), int(220)), (int(260), int(440)), (0, 255, 0), 4)
+		#scale=cv2.rectangle(scale, (int(260), int(220)), (int(520), int(440)), (0, 255, 0), 4)
 		msg = Float32MultiArray()
 		msg.data = distancias_objetos
 		#self.pub_objects_distances.publish(msg)
@@ -222,8 +229,8 @@ class image_viewer:
 					self.repre_state[7]=round(angle1,2)
 					scale=cv2.putText(scale,str(self.repre_state[7]),(260,400),cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 0), 3, cv2.LINE_AA)
 		if self.repre_state[5]==0.0:
-			self.repre_state[6]=float("nan")
-			self.repre_state[7]=float("nan")
+			self.repre_state[6]=999#float("nan")
+			self.repre_state[7]=999#float("nan")
 
 
 
@@ -244,7 +251,69 @@ class image_viewer:
 		#msg.dist = distancias_objetos
 		self.pub_state.publish(msg)
 		print("repre state",self.repre_state)
-		#self.pub_state.publish(self.repre_state)	
+
+
+		self.discretized_state(self.repre_state)
+
+		msg = Float32MultiArray()
+		msg.data = self.repre_state_discrete
+		#msg.dist = distancias_objetos
+		self.pub_state_discrete.publish(msg)
+
+	def discretized_state(self,array_1):
+		array_aux=[0,0,0,0,0,0,0,0,0]
+		if array_1[0]<=0.5:
+			array_aux[0]=0
+		else:
+			array_aux[0]=1
+		if array_1[1]<=0.5:
+		    array_aux[1]=0
+		else:
+		    array_aux[1]=1
+
+		if array_1[2]<=0.5:
+		    array_aux[2]=0
+		else:
+		    array_aux[2]=1
+
+		if array_1[3]<=0.5:
+		    array_aux[3]=0
+		else:
+		    array_aux[3]=1
+		
+		if array_1[4]<=0.5:
+		    array_aux[4]=0
+		else:
+		    array_aux[4]=1
+
+		if array_1[6]<=0.5:
+		    array_aux[6]=0
+		else:
+		    array_aux[6]=1
+		#0 close 1 far
+		#0 good 1 too left 2 too right
+		if array_1[7]<=-15:
+		    array_aux[7]=2
+		else:
+		    if array_1[7]>=15:
+		        array_aux[7]=1
+		    else:
+		        array_aux[7]=0
+		#8 altitud, 0 good 1 close ground 2 far ground
+		if array_1[8]<=0.5:
+		    array_aux[8]=1
+		else:
+		    if array_1[8]>=1.5:
+		        array_aux[8]=2
+		    else:
+		        array_aux[8]=0
+
+		array_aux[5]=array_1[5]
+		self.repre_state_discrete=array_aux
+		return self.repre_state_discrete
+
+
+
 
 	def depth_image(self,msg_depth):
 		bridge = CvBridge()
