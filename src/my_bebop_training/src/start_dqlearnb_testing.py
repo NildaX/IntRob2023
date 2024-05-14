@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
     continue_execution = True
     # fill this if continue_execution=True
-    resume_epoch = '1'  # change to epoch to continue from
+    resume_epoch = '420'  # change to epoch to continue from
     resume_path = path + resume_epoch
     weights_path = resume_path + '.h5'
     monitor_path = outdir  # resume_path
@@ -89,8 +89,8 @@ if __name__ == '__main__':
         learningRate = d.get('learningRate')
         discountFactor = d.get('discountFactor')
         memorySize = d.get('memorySize')
-        network_inputs = (84,84,3)#7056  # 1007056#54#3#d.get('network_inputs')
-        network_outputs = 8#d.get('network_outputs')
+        network_inputs = (84,84,3)#54#3#d.get('network_inputs')
+        network_outputs = d.get('network_outputs')
         network_structure = d.get('network_structure')
         current_epoch = d.get('current_epoch')
 
@@ -113,7 +113,6 @@ if __name__ == '__main__':
     # start iterating from 'current epoch'.
     print("Number of episodes",epochs)
     print("\n")
-    #rospy.sleep(5)
     for epoch in range(current_epoch + 1, epochs + 1, 1):
         print("Episode Number:",epoch)
         print("\n")
@@ -124,6 +123,27 @@ if __name__ == '__main__':
         episode_step = 0
 
         # run until env returns done
+        while not done:
+            rospy.logwarn("Episode Steps: " + str(episode_step))
+            _observation = numpy.array(_observation)
+            state_discre=env.return_state_discrete()
+            qValues = deepQ.getQValues(_observation)
+            action = deepQ.selectAction(qValues, explorationRate,state_discre)
+            newObservation,reward, done, info = env.step(action)
+            success_episode, failure_episode = env.get_episode_status()
+            cumulated_reward += reward
+            if highest_reward < cumulated_reward:
+                highest_reward = cumulated_reward
+            _observation = newObservation
+            if done:
+                data = [epoch, success_episode, failure_episode, cumulated_reward, episode_step + 1]
+                utils.record_data(data, outdir, gazebo_world_launch_name)
+                print("EPISODE REWARD: ", cumulated_reward)
+                print("EPISODE STEP: ", episode_step + 1)
+                print("EPISODE SUCCESS: ", success_episode)
+                print("EPISODE FAILURE: ", failure_episode)
+            episode_step += 1
+        '''
         while not done:
             rospy.logwarn("Episode Steps: " + str(episode_step))
             _observation = numpy.array(_observation)
@@ -149,5 +169,6 @@ if __name__ == '__main__':
                 print("EPISODE FAILURE: ", failure_episode)
 
             episode_step += 1
+        '''
 
     env.close()
