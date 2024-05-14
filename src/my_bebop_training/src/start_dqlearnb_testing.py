@@ -116,7 +116,7 @@ if __name__ == '__main__':
     for epoch in range(current_epoch + 1, epochs + 1, 1):
         print("Episode Number:",epoch)
         print("\n")
-        observation = env.reset()
+        observation = env.reset(num_episode=epoch)
         _observation = numpy.array(observation)
         done = False
         cumulated_reward = 0
