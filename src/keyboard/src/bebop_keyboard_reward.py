@@ -73,14 +73,15 @@ class keyboard:
 		print("discrete", self.array_states)
 		visibility_reward=100*self.array_states[5]
 		if self.array_states[5]==1:
-		    distance_reward=-self.array_states[6]*10 #distance_to_goal
-		    angle_reward=-(abs(self.array_states[7]))*10 #angle_to_goal
+		    distance_reward=-self.array_states[6] #distance_to_goal
+		    angle_reward=-(abs(self.array_states[7])) #angle_to_goal
+		    print("distancia cuando ve",distance_reward,angle_reward)
 		else:
-		    distance_reward=-100 #distance_to_goal
-		    angle_reward=-100 #angle_to_goal
-		distances_reward=(self.array_states[0]+self.array_states[1]+self.array_states[2])*5
-		print(distance_reward,angle_reward,visibility_reward,distances_reward)
-		reward = round(distance_reward + angle_reward + visibility_reward+distances_reward,2)
+		    distance_reward=-9 #distance_to_goal
+		    angle_reward=0 #angle_to_goal
+		    print("distancia cuando no ve",distance_reward,angle_reward)
+		print(distance_reward,angle_reward,visibility_reward)
+		reward = round(distance_reward + angle_reward + visibility_reward,2)
 		rospy.logdebug("reward=" + str(reward))
 		self.cumulated_reward += reward
 		rospy.logdebug("Cumulated_reward=" + str(self.cumulated_reward))
