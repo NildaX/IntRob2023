@@ -218,11 +218,13 @@ class BebopWorldEnv(bebop_env.BebopEnv):
     def _is_done(self,observations):
         #---aqui esta el error, problema
         #5 encontro, 6 distancia 7 angle
+        caso_r=0
         if self.COLLISION_BAND==1:
             self._episode_done=True
             self.episode_failure = True
             self.episode_success = False
             self.cumulated_episode_reward+=(-1000) ##colision
+            caso_r=1
         else:
             if self.repre_state[5]==1 and self.repre_state[6]<=1.3:
                 self._episode_done=True
@@ -230,6 +232,7 @@ class BebopWorldEnv(bebop_env.BebopEnv):
                 self.episode_success = True
                 rospy.logerr("Bebop True distance, angle ==>" + str(self.repre_state[6])+ ',' + str(self.repre_state[7]))
                 self.cumulated_episode_reward+=1000
+                caso_r=2
             else:
                 if self.repre_state[8]<0.15:
                     self._episode_done=True
@@ -237,6 +240,7 @@ class BebopWorldEnv(bebop_env.BebopEnv):
                     self.episode_success = False
                     rospy.logerr("ALtitude so near to the ground ==>")
                     self.cumulated_episode_reward+=(-1000)
+                    caso_r=3
                 else:
                     self._episode_done=False
                     self.episode_failure = True
@@ -290,7 +294,7 @@ class BebopWorldEnv(bebop_env.BebopEnv):
             self._episode_done = True
         '''
         rospy.logerr("_episode_done ==>" + str(self._episode_done))
-        return self._episode_done
+        return self._episode_done, caso_r
 
     def _compute_reward(self, observations,done):
         #compute_state=
