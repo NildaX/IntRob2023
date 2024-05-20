@@ -20,7 +20,7 @@ from openai_ros_b.openai_ros_common import StartOpenAI_ROS_Environment
 
 import utils
 from distutils.dir_util import copy_tree
-
+import numpy as np
 
 def detect_monitor_files(training_dir):
     return [os.path.join(training_dir, f) for f in os.listdir(training_dir) if f.startswith('openaigym')]
@@ -50,7 +50,7 @@ if __name__ == '__main__':
                     anonymous=True, log_level=rospy.WARN)
 
     archivo=pd.DataFrame(columns=['episode','section_0','section_1','section_2','section_3','section_4','see_goal','distance_goal','angle_goal','altitude','section_0_n','section_1_n','section_2_n','section_3_n','section_4_n','see_goal_n','distance_goal_n','angle_goal_n','altitude_n',"action","reward_acumulated","reward"])
-	archivo_discreto = pd.DataFrame(columns=['episode','section_0','section_1','section_2','section_3','section_4','see_goal','distance_goal','angle_goal','altitude','section_0_n','section_1_n','section_2_n','section_3_n','section_4_n','see_goal_n','distance_goal_n','angle_goal_n','altitude_n',"action","reward_acumulated","reward"])
+    archivo_discreto = pd.DataFrame(columns=['episode','section_0','section_1','section_2','section_3','section_4','see_goal','distance_goal','angle_goal','altitude','section_0_n','section_1_n','section_2_n','section_3_n','section_4_n','see_goal_n','distance_goal_n','angle_goal_n','altitude_n',"action","reward_acumulated","reward"])
     task_and_robot_environment_name = rospy.get_param(
         '/bebop/task_and_robot_environment_name')
     max_ep_steps = rospy.get_param("/bebop/nsteps")
