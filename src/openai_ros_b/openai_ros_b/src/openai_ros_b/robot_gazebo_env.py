@@ -233,6 +233,11 @@ class RobotGazeboEnv(gym.Env):
         """
         raise NotImplementedError()
 
+    def return_state_(self):
+        """Calculates the reward to give based on the observations given.
+        """
+        raise NotImplementedError()
+
     def _set_init_pose(self):
         """Sets the Robot in its init pose
         """

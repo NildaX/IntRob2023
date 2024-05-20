@@ -21,7 +21,7 @@ from openai_ros_b.openai_ros_common import StartOpenAI_ROS_Environment
 import utils
 from distutils.dir_util import copy_tree
 import numpy as np
-
+import pandas as pd
 def detect_monitor_files(training_dir):
     return [os.path.join(training_dir, f) for f in os.listdir(training_dir) if f.startswith('openaigym')]
 
@@ -176,9 +176,9 @@ if __name__ == '__main__':
             #print("before action")
             #---------previous
             previous_dstate=env.return_state_discrete()
-            previous_state=env._get_repre_state()
+            previous_state=env.return_state_()
 
-            action = deepQ.selectAction(qValues, explorationRate,state_discrete)
+            action = deepQ.selectAction(qValues, explorationRate,previous_dstate)
             #print("action",action)
             newObservation, reward, done, info = env.step(action)
 
@@ -186,7 +186,7 @@ if __name__ == '__main__':
 
             #----t+1
             array_states_discrete=env.return_state_discrete()
-            array_states=env._get_repre_state()
+            array_states=env.return_state_()
 
             #print("after newObservation")
             success_episode, failure_episode = env.get_episode_status()
@@ -207,8 +207,8 @@ if __name__ == '__main__':
 
             _observation = newObservation
 
-            new_row = {'episode':episode_step+1,'section_0': previous_state[0],'section_1': previous_state[1],'section_2': previous_state[2],'section_3': previous_state[3],'section_4': previous_state[4], 'see_goal': previous_state[5],'distance_goal':previous_state[6],'angle_goal':previous_state[7],'altitude':previous_state[8],'section_0_n':array_states [0],'section_1_n':array_states [1],'section_2_n':array_states [2],'section_3_n':array_states [3],'section_4_n':array_states [4],'see_goal_n':array_states [5],'distance_goal_n':array_states [6],'angle_goal_n':array_states [7],'altitude_n':array_states [8],"action": action, "reward_acumulated": cumulated_reward,"reward": reward}
-            new_row_d = {'episode':episode_step+1,'section_0': previous_dstate[0],'section_1': previous_dstate[1],'section_2': previous_dstate[2],'section_3': previous_dstate[3],'section_4': previous_dstate[4], 'see_goal': previous_dstate[5],'distance_goal':previous_dstate[6],'angle_goal':previous_dstate[7],'altitude':previous_dstate[8],'section_0_n':array_states_discrete [0],'section_1_n':array_states_discrete [1],'section_2_n':array_states_discrete [2],'section_3_n':array_states_discrete [3],'section_4_n':array_states_discrete [4],'see_goal_n':array_states_discrete [5],'distance_goal_n':array_states_discrete [6],'angle_goal_n':array_states_discrete [7],'altitude_n':array_states_discrete [8],"action": action, "reward_acumulated": cumulated_reward,"reward":reward}
+            new_row = {'episode':epoch,'section_0': previous_state[0],'section_1': previous_state[1],'section_2': previous_state[2],'section_3': previous_state[3],'section_4': previous_state[4], 'see_goal': previous_state[5],'distance_goal':previous_state[6],'angle_goal':previous_state[7],'altitude':previous_state[8],'section_0_n':array_states [0],'section_1_n':array_states [1],'section_2_n':array_states [2],'section_3_n':array_states [3],'section_4_n':array_states [4],'see_goal_n':array_states [5],'distance_goal_n':array_states [6],'angle_goal_n':array_states [7],'altitude_n':array_states [8],"action": action, "reward_acumulated": cumulated_reward,"reward": reward}
+            new_row_d = {'episode':epoch,'section_0': previous_dstate[0],'section_1': previous_dstate[1],'section_2': previous_dstate[2],'section_3': previous_dstate[3],'section_4': previous_dstate[4], 'see_goal': previous_dstate[5],'distance_goal':previous_dstate[6],'angle_goal':previous_dstate[7],'altitude':previous_dstate[8],'section_0_n':array_states_discrete [0],'section_1_n':array_states_discrete [1],'section_2_n':array_states_discrete [2],'section_3_n':array_states_discrete [3],'section_4_n':array_states_discrete [4],'see_goal_n':array_states_discrete [5],'distance_goal_n':array_states_discrete [6],'angle_goal_n':array_states_discrete [7],'altitude_n':array_states_discrete [8],"action": action, "reward_acumulated": cumulated_reward,"reward":reward}
 
             archivo.loc[len(archivo)] = new_row
             archivo_discreto.loc[len(archivo_discreto)] = new_row_d
@@ -265,7 +265,9 @@ if __name__ == '__main__':
 
         if epoch % 100 == 0:
             plotter.plot(env)
+    print(archivo)
+    print(archivo_discreto)
+    archivo.to_csv('/home/nilda/Documentos/Resultados/rewards.csv', index=False)
+    archivo_discreto.to_csv('/home/nilda/Documentos/Resultados/rewards_discreto.csv', index=False)
     print("----------------------------training end------------------------------------")
-    archivo.to_csv('rewards.csv', index=False)
-    archivo_discreto.to_csv('rewards_discreto.csv', index=False)
     env.close()

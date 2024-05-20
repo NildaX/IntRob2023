@@ -320,6 +320,9 @@ class BebopWorldEnv(bebop_env.BebopEnv):
     def return_state_discrete(self):
         return self.repre_state_discrete
 
+    def return_state_(self):
+        return self.repre_state
+
     # Internal TaskEnv Methods
     ##----------------Aqui seria cambiar por camara de profundidad
     def discretize_scan_observation(self, data, new_ranges):
