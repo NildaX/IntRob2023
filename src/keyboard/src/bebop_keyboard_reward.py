@@ -13,6 +13,7 @@ from geometry_msgs.msg import Twist
 from std_msgs.msg import Int8
 from std_msgs.msg import Float32MultiArray
 import pandas as pd
+import numpy as np
 class keyboard:
 	def __init__(self):
 		self.pub_takeoff = rospy.Publisher('/bebop2/takeoff', Empty, queue_size=10)
@@ -30,8 +31,8 @@ class keyboard:
 		self.speed_value = 0.3
 		self.cumulated_reward=0
 		self.cumulated_steps=0
-		self.archivo=pd.DataFrame(columns=['section_0','section_1','section_2','section_3','section_4','see_goal','distance_goal','angle_goal','altitude','section_0_n','section_1_n','section_2_n','section_3_n','section_4_n','see_goal_n','distance_goal_n','angle_goal_n','altitude_n',"action","reward"])
-		self.archivo_discreto = pd.DataFrame(columns=['section_0','section_1','section_2','section_3','section_4','see_goal','distance_goal','angle_goal','altitude','section_0_n','section_1_n','section_2_n','section_3_n','section_4_n','see_goal_n','distance_goal_n','angle_goal_n','altitude_n',"action","reward"])
+		self.archivo=pd.DataFrame(columns=['section_0','section_1','section_2','section_3','section_4','see_goal','distance_goal','angle_goal','altitude','section_0_n','section_1_n','section_2_n','section_3_n','section_4_n','see_goal_n','distance_goal_n','angle_goal_n','altitude_n',"action","reward_acumulated","reward"])
+		self.archivo_discreto = pd.DataFrame(columns=['section_0','section_1','section_2','section_3','section_4','see_goal','distance_goal','angle_goal','altitude','section_0_n','section_1_n','section_2_n','section_3_n','section_4_n','see_goal_n','distance_goal_n','angle_goal_n','altitude_n',"action","reward_acumulated","reward"])
 		
 		self.init_msg = """		-------------------------------
 		Increment speed	- Right arrow
@@ -67,9 +68,10 @@ class keyboard:
 		print(self.final_msg)
 		self.cmd_vel()
 	def flag5(self,msg):
-		self.array_states_discrete=msg.data
+		self.array_states_discrete=np.round(msg.data, 2) 
+		
 	def flag6(self,msg):
-		self.array_states=msg.data
+		self.array_states=np.round(msg.data, 2) 
 
 	def _compute_reward(self):
 		print("discrete", self.array_states)
@@ -217,8 +219,8 @@ class keyboard:
 				self.pub_cmd_vel.publish(self.vel_msg)
 				if key!=keys.T:
 					reward=self._compute_reward()
-					new_row = {'section_0': previous_state[0],'section_1': previous_state[1],'section_2': previous_state[2],'section_3': previous_state[3],'section_4': previous_state[4], 'see_goal': previous_state[5],'distance_goal':previous_state[6],'angle_goal':previous_state[7],'altitude':previous_state[8],'section_0_n':self.array_states [0],'section_1_n':self.array_states [1],'section_2_n':self.array_states [2],'section_3_n':self.array_states [3],'section_4_n':self.array_states [4],'see_goal_n':self.array_states [5],'distance_goal_n':self.array_states [6],'angle_goal_n':self.array_states [7],'altitude_n':self.array_states [8],"action": action, "reward": self.cumulated_reward}
-					new_row_d = {'section_0': previous_dstate[0],'section_1': previous_dstate[1],'section_2': previous_dstate[2],'section_3': previous_dstate[3],'section_4': previous_dstate[4], 'see_goal': previous_dstate[5],'distance_goal':previous_dstate[6],'angle_goal':previous_dstate[7],'altitude':previous_dstate[8],'section_0_n':self.array_states_discrete [0],'section_1_n':self.array_states_discrete [1],'section_2_n':self.array_states_discrete [2],'section_3_n':self.array_states_discrete [3],'section_4_n':self.array_states_discrete [4],'see_goal_n':self.array_states_discrete [5],'distance_goal_n':self.array_states_discrete [6],'angle_goal_n':self.array_states_discrete [7],'altitude_n':self.array_states_discrete [8],"action": action, "reward": self.cumulated_reward}
+					new_row = {'section_0': previous_state[0],'section_1': previous_state[1],'section_2': previous_state[2],'section_3': previous_state[3],'section_4': previous_state[4], 'see_goal': previous_state[5],'distance_goal':previous_state[6],'angle_goal':previous_state[7],'altitude':previous_state[8],'section_0_n':self.array_states [0],'section_1_n':self.array_states [1],'section_2_n':self.array_states [2],'section_3_n':self.array_states [3],'section_4_n':self.array_states [4],'see_goal_n':self.array_states [5],'distance_goal_n':self.array_states [6],'angle_goal_n':self.array_states [7],'altitude_n':self.array_states [8],"action": action, "reward_acumulated": self.cumulated_reward,"reward": reward}
+					new_row_d = {'section_0': previous_dstate[0],'section_1': previous_dstate[1],'section_2': previous_dstate[2],'section_3': previous_dstate[3],'section_4': previous_dstate[4], 'see_goal': previous_dstate[5],'distance_goal':previous_dstate[6],'angle_goal':previous_dstate[7],'altitude':previous_dstate[8],'section_0_n':self.array_states_discrete [0],'section_1_n':self.array_states_discrete [1],'section_2_n':self.array_states_discrete [2],'section_3_n':self.array_states_discrete [3],'section_4_n':self.array_states_discrete [4],'see_goal_n':self.array_states_discrete [5],'distance_goal_n':self.array_states_discrete [6],'angle_goal_n':self.array_states_discrete [7],'altitude_n':self.array_states_discrete [8],"action": action, "reward_acumulated": self.cumulated_reward,"reward":reward}
 
 					self.archivo.loc[len(self.archivo)] = new_row
 					self.archivo_discreto.loc[len(self.archivo_discreto)] = new_row_d
