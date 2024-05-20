@@ -49,7 +49,8 @@ if __name__ == '__main__':
     rospy.init_node('example_bebop_dqlearn',
                     anonymous=True, log_level=rospy.WARN)
 
-    # Init openai_ros_b ENV
+    archivo=pd.DataFrame(columns=['episode','section_0','section_1','section_2','section_3','section_4','see_goal','distance_goal','angle_goal','altitude','section_0_n','section_1_n','section_2_n','section_3_n','section_4_n','see_goal_n','distance_goal_n','angle_goal_n','altitude_n',"action","reward_acumulated","reward"])
+	archivo_discreto = pd.DataFrame(columns=['episode','section_0','section_1','section_2','section_3','section_4','see_goal','distance_goal','angle_goal','altitude','section_0_n','section_1_n','section_2_n','section_3_n','section_4_n','see_goal_n','distance_goal_n','angle_goal_n','altitude_n',"action","reward_acumulated","reward"])
     task_and_robot_environment_name = rospy.get_param(
         '/bebop/task_and_robot_environment_name')
     max_ep_steps = rospy.get_param("/bebop/nsteps")
@@ -173,11 +174,20 @@ if __name__ == '__main__':
             #print("before qvalues")
             qValues = deepQ.getQValues(_observation)
             #print("before action")
-            print("discrete desde start training",env.return_state_discrete())
-            action = deepQ.selectAction(qValues, explorationRate,env.return_state_discrete())
+            #---------previous
+            previous_dstate=env.return_state_discrete()
+            previous_state=env._get_repre_state()
+
+            action = deepQ.selectAction(qValues, explorationRate,state_discrete)
             #print("action",action)
             newObservation, reward, done, info = env.step(action)
-            state_representation=env.get_state_gazebo()
+
+            state_representation=env.get_state_gazebo() #este es el junto con , 
+
+            #----t+1
+            array_states_discrete=env.return_state_discrete()
+            array_states=env._get_repre_state()
+
             #print("after newObservation")
             success_episode, failure_episode = env.get_episode_status()
             #print("after newobservation succes")
@@ -196,6 +206,13 @@ if __name__ == '__main__':
                     deepQ.learnOnMiniBatch(minibatch_size, True)
 
             _observation = newObservation
+
+            new_row = {'episode':episode_step+1,'section_0': previous_state[0],'section_1': previous_state[1],'section_2': previous_state[2],'section_3': previous_state[3],'section_4': previous_state[4], 'see_goal': previous_state[5],'distance_goal':previous_state[6],'angle_goal':previous_state[7],'altitude':previous_state[8],'section_0_n':array_states [0],'section_1_n':array_states [1],'section_2_n':array_states [2],'section_3_n':array_states [3],'section_4_n':array_states [4],'see_goal_n':array_states [5],'distance_goal_n':array_states [6],'angle_goal_n':array_states [7],'altitude_n':array_states [8],"action": action, "reward_acumulated": cumulated_reward,"reward": reward}
+            new_row_d = {'episode':episode_step+1,'section_0': previous_dstate[0],'section_1': previous_dstate[1],'section_2': previous_dstate[2],'section_3': previous_dstate[3],'section_4': previous_dstate[4], 'see_goal': previous_dstate[5],'distance_goal':previous_dstate[6],'angle_goal':previous_dstate[7],'altitude':previous_dstate[8],'section_0_n':array_states_discrete [0],'section_1_n':array_states_discrete [1],'section_2_n':array_states_discrete [2],'section_3_n':array_states_discrete [3],'section_4_n':array_states_discrete [4],'see_goal_n':array_states_discrete [5],'distance_goal_n':array_states_discrete [6],'angle_goal_n':array_states_discrete [7],'altitude_n':array_states_discrete [8],"action": action, "reward_acumulated": cumulated_reward,"reward":reward}
+
+            archivo.loc[len(archivo)] = new_row
+            archivo_discreto.loc[len(archivo_discreto)] = new_row_d
+
 
             if done:
                 data = [epoch, success_episode, failure_episode, cumulated_reward, episode_step + 1,state_representation]
@@ -249,4 +266,6 @@ if __name__ == '__main__':
         if epoch % 100 == 0:
             plotter.plot(env)
     print("----------------------------training end------------------------------------")
+    archivo.to_csv('rewards.csv', index=False)
+    archivo_discreto.to_csv('rewards_discreto.csv', index=False)
     env.close()
