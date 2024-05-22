@@ -214,6 +214,8 @@ if __name__ == '__main__':
             archivo_discreto.loc[len(archivo_discreto)] = new_row_d
 
 
+
+
             if done:
                 data = [epoch, success_episode, failure_episode, cumulated_reward, episode_step + 1,state_representation]
                 utils.record_data(data, outdir, gazebo_world_launch_name)
@@ -252,6 +254,8 @@ if __name__ == '__main__':
                         parameter_dictionary = dict(zip(parameter_keys, parameter_values))
                         with open(path + str(epoch) + '.json', 'w') as outfile:
                             json.dump(parameter_dictionary, outfile)
+                        archivo.to_csv('/home/nilda/Documentos/Resultados/rewards.csv', index=False)
+                        archivo_discreto.to_csv('/home/nilda/Documentos/Resultados/rewards_discreto.csv', index=False)
 
             stepCounter += 1
             if stepCounter % updateTargetNetwork == 0:
@@ -267,7 +271,6 @@ if __name__ == '__main__':
             plotter.plot(env)
     print(archivo)
     print(archivo_discreto)
-    archivo.to_csv('/home/nilda/Documentos/Resultados/rewards.csv', index=False)
-    archivo_discreto.to_csv('/home/nilda/Documentos/Resultados/rewards_discreto.csv', index=False)
+    
     print("----------------------------training end------------------------------------")
     env.close()

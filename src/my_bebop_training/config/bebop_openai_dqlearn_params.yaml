@@ -9,6 +9,6 @@ bebop: #namespace
     gamma: 0.99
     epsilon: 1.0
     epsilon_discount: 0.995
-    nepisodes: 2
-    nsteps: 50
+    nepisodes: 500
+    nsteps: 200
     number_splits: 10 # set to change the number of state splits for the continuous problem and also the number of env_variable splits
