@@ -234,7 +234,7 @@ class BebopWorldEnv(bebop_env.BebopEnv):
                 self.cumulated_episode_reward+=1000
                 caso_r=2
             else:
-                if self.repre_state[8]<0.15:
+                if self.repre_state[8]<0.15 or self.repre_state[8]>3:
                     self._episode_done=True
                     self.episode_failure = True
                     self.episode_success = False

@@ -220,7 +220,7 @@ class DeepQ:
                         filtered_evidence= {key: value for key, value in evidence.items() if key in depend_reward[i]}
                         result = inference[i].query(variables=['reward'], evidence=filtered_evidence)
                         for state in result.state_names['reward']:
-                            print(f"reward = {state}: {result.values[result.state_names['reward'].index(state)]}")
+                            #print(f"reward = {state}: {result.values[result.state_names['reward'].index(state)]}")
                             if (state==1):
                                 prob_action[i]=result.values[result.state_names['reward'].index(state)]
 

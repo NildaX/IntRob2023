@@ -239,7 +239,7 @@ if __name__ == '__main__':
 
             #---- hacerlo cada 100 esta bien? en un episodio de 200 se harian dos actualizaciones 
             print("len",len(archivo_discreto))
-            if len(archivo_discreto)% 10 == 0:
+            if len(archivo_discreto)% 100 == 0:
                 print("----------actualizar red bayesiana---------------")
                 model_actions=[]
                 for i in range(8):
@@ -249,7 +249,7 @@ if __name__ == '__main__':
                     print(len(model_actions[i]))
                     if len(model_actions[i])>0:
                         bic_score = BicScore(model_actions[i])
-                        if (len(archivo_discreto)==10):
+                        if (len(archivo_discreto)==100):
                             hcs = HillClimbSearch(model_actions[i])
                         else:
                             if (graphs[i]!=0):
