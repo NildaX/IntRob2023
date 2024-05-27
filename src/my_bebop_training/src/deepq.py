@@ -13,6 +13,7 @@ from tensorflow.keras import layers
 from tensorflow import keras
 import tensorflow as tf
 import os
+from pgmpy.inference import VariableElimination
 class DeepQ:
     """
     DQN abstraction.
@@ -188,20 +189,49 @@ class DeepQ:
             return reward + self.discountFactor * self.getMaxQ(qValuesNewState)
 
     # select the action with the highest Q value
-    def selectAction(self, qValues, explorationRate,disc_state):
+    def selectAction(self, qValues, explorationRate,disc_state,unconnected_nodes,depend_reward,inference,hay_modelo):
         #--aqui debe de decidir si elegir la accion de la red o no
-        print("space",disc_state)
-        if disc_state in self.red_defined:
-            index = self.red_defined.index(disc_state)
-            action=self.red_actions[index]
-            print(f"The discrete state exists in bayesian at index",index,action)
-        else:
-            print(f"The discrete state does not exist in bayesian.")
-            rand = random.random()
-            if rand < explorationRate:
-                action = np.random.randint(0, self.output_size)
+        evidence = {'section_0':disc_state[0],'section_1':disc_state[1],
+                    'section_2':disc_state[2],'section_3':disc_state[3],
+                    'section_4':disc_state[4], 'rearch_goal':disc_state[5],
+                    'distance_goal':disc_state[6],'angle_goal':disc_state[7],
+                    'altitude': disc_state[8],
+                    }
+        #quitamos los que no estan conectados, es decir no aparecen en la red ya que sino esta
+        #manda un error al poner la evidenciad ese nodo
+        
+
+
+
+
+        #--- con cierta probabilidad, accion aleatoria, max q values, accion de bayes
+
+        rand = random.random()
+        if rand < explorationRate:
+
+            #
+            if hay_modelo>0:
+                prob_action=[0,0,0,0,0,0,0,0]
+                for i in range(8): ##para todas las acciones
+                    if unconnected_nodes[i]==0:
+                        prob_action[i]=0
+                    else:
+                        evidence = {key: value for key, value in evidence.items() if key not in unconnected_nodes[i]} #preguntarse que hacer cuando es vacio
+                        filtered_evidence= {key: value for key, value in evidence.items() if key in depend_reward[i]}
+                        result = inference[i].query(variables=['reward'], evidence=filtered_evidence)
+                        for state in result.state_names['reward']:
+                            print(f"reward = {state}: {result.values[result.state_names['reward'].index(state)]}")
+                            if (state==1):
+                                prob_action[i]=result.values[result.state_names['reward'].index(state)]
+
+                max_index = prob_action.index(max(prob_action))
+                print("Index of the greatest number:", max_index)
+                action=max_index
             else:
-                action = self.getMaxIndex(qValues)
+                action = np.random.randint(0, self.output_size)
+
+        else:
+            action = self.getMaxIndex(qValues)
             ##--------------------------------------
             '''
             if action==0:
