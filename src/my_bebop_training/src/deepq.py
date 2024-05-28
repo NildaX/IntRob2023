@@ -216,13 +216,16 @@ class DeepQ:
                     if unconnected_nodes[i]==0:
                         prob_action[i]=0
                     else:
-                        evidence = {key: value for key, value in evidence.items() if key not in unconnected_nodes[i]} #preguntarse que hacer cuando es vacio
-                        filtered_evidence= {key: value for key, value in evidence.items() if key in depend_reward[i]}
-                        result = inference[i].query(variables=['reward'], evidence=filtered_evidence)
-                        for state in result.state_names['reward']:
-                            #print(f"reward = {state}: {result.values[result.state_names['reward'].index(state)]}")
-                            if (state==1):
-                                prob_action[i]=result.values[result.state_names['reward'].index(state)]
+                        try:
+                            evidence = {key: value for key, value in evidence.items() if key not in unconnected_nodes[i]} #preguntarse que hacer cuando es vacio
+                            filtered_evidence= {key: value for key, value in evidence.items() if key in depend_reward[i]}
+                            result = inference[i].query(variables=['reward'], evidence=filtered_evidence)
+                            for state in result.state_names['reward']:
+                                #print(f"reward = {state}: {result.values[result.state_names['reward'].index(state)]}")
+                                if (state==1):
+                                    prob_action[i]=result.values[result.state_names['reward'].index(state)]
+                        except:
+                             prob_action[i]=0
 
                 max_index = prob_action.index(max(prob_action))
                 print("Index of the greatest number:", max_index)
