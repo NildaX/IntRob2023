@@ -94,14 +94,16 @@ if __name__ == '__main__':
     gazebo_world_launch_name = env.get_gazebo_world_launch_name()
     utils.remove_logfile_if_exist(outdir, gazebo_world_launch_name)
 
-    continue_execution = False
+    continue_execution = True
     # fill this if continue_execution=True
-    resume_epoch = 'prueba'  # change to epoch to continue from
+    resume_epoch = '220'  # change to epoch to continue from
     resume_path = path + resume_epoch
     weights_path = resume_path + '.h5'
     monitor_path = outdir  # resume_path
     params_json = resume_path + '.json'
     print("-------------before continue execution--------------")
+    print(params_json)
+    print(weights_path)
     if not continue_execution:
         # Each time we take a sample and update our weights it is called a mini-batch.
         # Each time we run through the entire dataset, it's called an epoch.
@@ -129,7 +131,7 @@ if __name__ == '__main__':
         # ADD TRY CATCH fro this else
         with open(params_json) as outfile:
             d = json.load(outfile)
-            epochs = d.get('epochs') + 500
+            epochs = 240 #d.get('epochs') + 5
             steps = d.get('steps')
             updateTargetNetwork = d.get('updateTargetNetwork')
             explorationRate = d.get('explorationRate')

@@ -228,7 +228,7 @@ class DeepQ:
                              prob_action[i]=0
 
                 max_index = prob_action.index(max(prob_action))
-                print("Index of the greatest number:", max_index)
+                print("Index oforwardf the greatest number:", max_index)
                 action=max_index
             else:
                 action = np.random.randint(0, self.output_size)
@@ -291,7 +291,7 @@ class DeepQ:
             for sample in miniBatch:
                 isFinal = sample['isFinal']
                 state = sample['state']
-                #print("#------------------- state",state.shape)
+                #print("#-----forward-------------- state",state.shape)
                 action = sample['action']
                 reward = sample['reward']
                 newState = sample['newState']
@@ -315,6 +315,25 @@ class DeepQ:
 
     def saveModel(self, path):
         self.model.save(path)
+    def compare_weights(self,model1, model2):
+        for layer1, layer2 in zip(model1.layers, model2.layers):
+            weights1 = layer1.get_weights()
+            weights2 = layer2.get_weights()
+            for w1, w2 in zip(weights1, weights2):
+                if not np.array_equal(w1, w2):
+                    print(f"Weights mismatch in layer {layer1.name}")
+                    return False
+        return True
 
     def loadWeights(self, path):
+        print("-----------------loadWeights----------------")
         self.model.set_weights(load_model(path).get_weights())
+        # Load weights into a separate model from the saved file for comparison
+        loaded_model = load_model(path)
+        # Verify if weights have been loaded correctly
+        if self.compare_weights(self.model, loaded_model):
+            print("Weights have been loaded correctly.")
+        else:
+            print("Weights have not been loaded correctly.")
+    # Function to compare weights
+    
