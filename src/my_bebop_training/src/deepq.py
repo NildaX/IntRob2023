@@ -13,6 +13,7 @@ from tensorflow.keras import layers
 from tensorflow import keras
 import tensorflow as tf
 import os
+import pandas as pd
 class DeepQ:
     """
     DQN abstraction.
@@ -45,6 +46,7 @@ class DeepQ:
 
         self.red_defined=[[1,1,1,1,1,1,1,0,0],[0,0,0,0,0,0,1,1,0],[0,0,0,0,0,0,1,1,1],[0,0,0,0,0,0,1,2,1],[0,0,0,0,0,0,1,1,2],[0,0,0,0,0,0,1,2,2],[0,0,0,0,0,1,0,2,0], [1,1,1,1,1,1,0,2,0],[0,0,0,0,0,1,0,1,0],[1,1,1,1,1,1,0,1,0],[0,0,0,0,0,1,1,2,0],[1,1,1,1,1,1,1,2,0],[0,0,0,0,0,1,1,1,0],[1,1,1,1,1,1,1,1,0] ]
         self.red_actions=[2,3,0,0,1,1,7,7,6,6,5,5,4,4]#actions
+        self.archivo=pd.DataFrame(columns=['dq_0','dq_1','dq_2','dq_3','dq_4','dq_5','dq_6','dq_7'])
 
 
     def flag(self,msg):
@@ -191,6 +193,9 @@ class DeepQ:
     def selectAction(self, qValues, explorationRate,disc_state):
         #--aqui debe de decidir si elegir la accion de la red o no
         print("space",disc_state)
+        new_row= {'dq_0':qValues[0],'dq_1':qValues[1],'dq_2':qValues[2],'dq_3':qValues[3],'dq_4':qValues[4],'dq_5':qValues[5],'dq_6':qValues[6],'dq_7':qValues[7]}
+        self.archivo.loc[len(self.archivo)] = new_row
+        self.archivo.to_csv('/home/nilda/Documentos/qValues/desde_0.csv', index=False)
         if disc_state in self.red_defined:
             index = self.red_defined.index(disc_state)
             action=self.red_actions[index]

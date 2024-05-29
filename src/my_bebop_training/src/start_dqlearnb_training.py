@@ -20,7 +20,7 @@ from openai_ros_b.openai_ros_common import StartOpenAI_ROS_Environment
 
 import utils
 from distutils.dir_util import copy_tree
-
+import pandas as pd
 
 def detect_monitor_files(training_dir):
     return [os.path.join(training_dir, f) for f in os.listdir(training_dir) if f.startswith('openaigym')]
@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     continue_execution = False
     # fill this if continue_execution=True
-    resume_epoch = 'prueba'  # change to epoch to continue from
+    resume_epoch = '1500'  # change to epoch to continue from
     resume_path = path + resume_epoch
     weights_path = resume_path + '.h5'
     monitor_path = outdir  # resume_path
@@ -108,7 +108,7 @@ if __name__ == '__main__':
         # ADD TRY CATCH fro this else
         with open(params_json) as outfile:
             d = json.load(outfile)
-            epochs = d.get('epochs') + 500
+            epochs = 1510 #d.get('epochs') + 500
             steps = d.get('steps')
             updateTargetNetwork = d.get('updateTargetNetwork')
             explorationRate = d.get('explorationRate')
