@@ -65,7 +65,6 @@ if __name__ == '__main__':
     pkg_path = rospack.get_path('bebop_openai_ros_example')
     outdir = pkg_path + '/training_results/dqlearn'
     path = pkg_path + '/training_results/dqlearn/bebop_'
-    plotter = liveplot.LivePlot(outdir)
     env = wrappers.Monitor(env, outdir, force=True)
     rospy.loginfo("Monitor Wrapper started")
 
@@ -222,7 +221,7 @@ if __name__ == '__main__':
                           h, m, s))
                     if epoch % 10 == 0:
                         # save model weights and monitoring data every 100 epochs.
-                        deepQ.saveModel(path + str(epoch) + '.h5')
+                        deepQ.saveModel(path + str(epoch) + '.h5',path + str(epoch)+'_target_' + '.h5',path + str(epoch)+'_memory_' + '.pkl')
                         env._flush()
                         copy_tree(outdir, str(epoch))
                         # save simulation parameters.
@@ -246,7 +245,5 @@ if __name__ == '__main__':
         explorationRate *= epsilon_discount
         explorationRate = max(0.05, explorationRate)
 
-        if epoch % 100 == 0:
-            plotter.plot(env)
     print("----------------------------training end------------------------------------")
     env.close()
