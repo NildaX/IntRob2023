@@ -65,7 +65,6 @@ if __name__ == '__main__':
     pkg_path = rospack.get_path('bebop_openai_ros_example')
     outdir = pkg_path + '/training_results/dqlearn'
     path = pkg_path + '/training_results/dqlearn/bebop_'
-    plotter = liveplot.LivePlot(outdir)
     env = wrappers.Monitor(env, outdir, force=True)
     rospy.loginfo("Monitor Wrapper started")
 
@@ -78,6 +77,8 @@ if __name__ == '__main__':
     resume_epoch = 'prueba'  # change to epoch to continue from
     resume_path = path + resume_epoch
     weights_path = resume_path + '.h5'
+    weights_target_path = resume_path +'_target_' + '.h5'
+    memory_path = resume_path +'_memory_' + '.pkl'
     monitor_path = outdir  # resume_path
     params_json = resume_path + '.json'
     print("-------------before continue execution--------------")
@@ -98,6 +99,10 @@ if __name__ == '__main__':
         network_outputs = 8 #3  # 21
         network_structure = [300, 300]
         current_epoch = 0
+        last100ScoresIndex = 0
+        stepCounter = 0
+        last100Filled = False
+        highest_reward = 0
 
         epsilon_discount = rospy.get_param("/bebop/epsilon_discount")  # 0.995
 
@@ -121,6 +126,10 @@ if __name__ == '__main__':
             network_outputs = 8 #d.get('network_outputs')
             network_structure = d.get('network_structure')
             current_epoch = d.get('current_epoch')
+            last100ScoresIndex = d.get('last100ScoresIndex')
+            stepCounter =  d.get('stepCounter')
+            last100Filled = d.get('last100Filled')
+            highest_reward = d.get('highest_reward')
 
             # added
             epsilon_discount = rospy.get_param("/bebop/epsilon_discount")  # 0.995
@@ -128,7 +137,7 @@ if __name__ == '__main__':
         deepQ = deepq.DeepQ(network_inputs, network_outputs, memorySize, discountFactor, learningRate, learnStart)
         deepQ.initNetworks(network_structure, training=True)
 
-        deepQ.loadWeights(weights_path)
+        deepQ.loadWeights(weights_path,weights_target_path,memory_path)
 
         clear_monitor_files(outdir)
         copy_tree(monitor_path, outdir)
@@ -137,10 +146,6 @@ if __name__ == '__main__':
     env = gym.wrappers.Monitor(env, outdir, force=not continue_execution, resume=continue_execution)
 
     last100Scores = [0] * 100
-    last100ScoresIndex = 0
-    last100Filled = False
-    stepCounter = 0
-    highest_reward = 0
     rospy.logwarn("Number of episodes:"+str(epochs)+" Steps: "+str(steps))
     start_time = time.time()
     print("Number of episodes",epochs)
@@ -224,13 +229,14 @@ if __name__ == '__main__':
                           h, m, s))
                     if epoch % 10 == 0:
                         # save model weights and monitoring data every 100 epochs.
-                        deepQ.saveModel(path + str(epoch) + '.h5')
+                        deepQ.saveModel(path + str(epoch) + '.h5',path + str(epoch)+'_target_' + '.h5',path + str(epoch)+'_memory_' + '.pkl')
                         env._flush()
                         copy_tree(outdir, str(epoch))
                         # save simulation parameters.
                         parameter_keys = ['epochs', 'steps', 'updateTargetNetwork', 'explorationRate', 'minibatch_size',
                                             'learnStart', 'learningRate', 'discountFactor', 'memorySize',
-                                            'network_inputs', 'network_outputs', 'network_structure', 'current_epoch']
+                                            'network_inputs', 'network_outputs', 'network_structure', 'current_epoch','stepCounter','last100ScoresIndex',
+                                            'last100Filled','highest_reward']
                         parameter_values = [epochs, steps, updateTargetNetwork, explorationRate, minibatch_size,
                                             learnStart, learningRate, discountFactor, memorySize, network_inputs,
                                             network_outputs, network_structure, epoch]
@@ -248,7 +254,5 @@ if __name__ == '__main__':
         explorationRate *= epsilon_discount
         explorationRate = max(0.05, explorationRate)
 
-        if epoch % 100 == 0:
-            plotter.plot(env)
     print("----------------------------training end------------------------------------")
     env.close()

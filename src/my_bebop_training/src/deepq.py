@@ -276,8 +276,12 @@ class DeepQ:
                     Y_batch = np.append(Y_batch, np.array([[reward] * self.output_size]), axis=0)
             self.model.fit(X_batch, Y_batch, batch_size=len(miniBatch), epochs=1, verbose=0)
 
-    def saveModel(self, path):
+    def saveModel(self, path,path2,path3):
         self.model.save(path)
+        self.targetModel.save(path2)
+        self.memory.save(path3)
 
-    def loadWeights(self, path):
+    def loadWeights(self, path,path1,path2):
         self.model.set_weights(load_model(path).get_weights())
+        self.targetModel.set_weights(load_model(path1).get_weights())
+        self.memory.load(path2)

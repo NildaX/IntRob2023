@@ -5,7 +5,7 @@ from gym.utils import seeding
 from .gazebo_connection import GazeboConnection
 from .controllers_connection import ControllersConnection
 #https://bitbucket.org/theconstructcore/theconstruct_msgs/src/master/msg/RLExperimentInfo.msg
-from openai_ros.msg import RLExperimentInfo
+#from openai_ros.msg import RLExperimentInfo
 
 # https://github.com/openai/gym/blob/master/gym/core.py
 class RobotGazeboEnv(gym.Env):
@@ -27,7 +27,7 @@ class RobotGazeboEnv(gym.Env):
         self.cumulated_episode_step = 0
         self.repre_state_gazebo=''
 
-        self.reward_pub = rospy.Publisher('/openai/reward', RLExperimentInfo, queue_size=1)
+        #self.reward_pub = rospy.Publisher('/openai/reward', RLExperimentInfo, queue_size=1)
 
         # We Unpause the simulation and reset the controllers if needed
         """
@@ -137,11 +137,7 @@ class RobotGazeboEnv(gym.Env):
         :return:
         """
         rospy.logwarn("PUBLISHING REWARD...")
-        self._publish_reward_topic(
-                                    self.cumulated_episode_reward,
-                                    self.cumulated_episode_step,
-                                    self.episode_num
-                                    )
+        #self._publish_reward_topic(self.cumulated_episode_reward, self.cumulated_episode_step,self.episode_num)
         rospy.logwarn("PUBLISHING REWARD...DONE="+str(self.cumulated_episode_reward)+",EP="+str(self.episode_num))
 
         self.episode_num += 1

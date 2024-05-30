@@ -1,6 +1,6 @@
 import random
 import numpy as np
-
+import pickle
 
 class Memory:
     """
@@ -51,3 +51,26 @@ class Memory:
             self.finals.append(isFinal)
 
         self.currentPosition += 1
+    def save(self, filepath):
+        state = {
+            'size': self.size,
+            'currentPosition': self.currentPosition,
+            'states': self.states,
+            'actions': self.actions,
+            'rewards': self.rewards,
+            'newStates': self.newStates,
+            'finals': self.finals
+        }
+        with open(filepath, 'wb') as f:
+            pickle.dump(state, f)
+
+    def load(self, filepath):
+        with open(filepath, 'rb') as f:
+            state = pickle.load(f)
+            self.size = state['size']
+            self.currentPosition = state['currentPosition']
+            self.states = state['states']
+            self.actions = state['actions']
+            self.rewards = state['rewards']
+            self.newStates = state['newStates']
+            self.finals = state['finals']
