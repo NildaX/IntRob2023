@@ -74,3 +74,6 @@ class Memory:
             self.rewards = state['rewards']
             self.newStates = state['newStates']
             self.finals = state['finals']
+        print("------------------------------------------")
+        print("load memory", self.currentPosition)
+        print("------------------------------------------")

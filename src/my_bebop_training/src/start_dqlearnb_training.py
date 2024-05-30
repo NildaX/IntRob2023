@@ -72,11 +72,13 @@ if __name__ == '__main__':
     gazebo_world_launch_name = env.get_gazebo_world_launch_name()
     utils.remove_logfile_if_exist(outdir, gazebo_world_launch_name)
 
-    continue_execution = False
+    continue_execution = True
     # fill this if continue_execution=True
-    resume_epoch = '1500'  # change to epoch to continue from
+    resume_epoch = '20'  # change to epoch to continue from
     resume_path = path + resume_epoch
     weights_path = resume_path + '.h5'
+    weights_target_path = resume_path +'_target_' + '.h5'
+    memory_path = resume_path +'_memory_' + '.pkl'
     monitor_path = outdir  # resume_path
     params_json = resume_path + '.json'
     print("-------------before continue execution--------------")
@@ -98,6 +100,11 @@ if __name__ == '__main__':
         network_structure = [300, 300]
         current_epoch = 0
 
+        last100ScoresIndex = 0
+        stepCounter = 0
+        last100Filled = False
+        highest_reward = 0
+
         epsilon_discount = rospy.get_param("/bebop/epsilon_discount")  # 0.995
 
         deepQ = deepq.DeepQ(network_inputs, network_outputs, memorySize, discountFactor, learningRate, learnStart)
@@ -107,7 +114,7 @@ if __name__ == '__main__':
         # ADD TRY CATCH fro this else
         with open(params_json) as outfile:
             d = json.load(outfile)
-            epochs = 1510 #d.get('epochs') + 500
+            epochs = 50 #d.get('epochs') + 500
             steps = d.get('steps')
             updateTargetNetwork = d.get('updateTargetNetwork')
             explorationRate = d.get('explorationRate')
@@ -121,25 +128,27 @@ if __name__ == '__main__':
             network_structure = d.get('network_structure')
             current_epoch = d.get('current_epoch')
 
+            last100ScoresIndex = d.get('last100ScoresIndex')
+            stepCounter =  d.get('stepCounter')
+            last100Filled = d.get('last100Filled')
+            highest_reward = d.get('highest_reward')
+
             # added
             epsilon_discount = rospy.get_param("/bebop/epsilon_discount")  # 0.995
 
         deepQ = deepq.DeepQ(network_inputs, network_outputs, memorySize, discountFactor, learningRate, learnStart)
         deepQ.initNetworks(network_structure, training=True)
 
-        deepQ.loadWeights(weights_path)
+        deepQ.loadWeights(weights_path,weights_target_path,memory_path)
 
         clear_monitor_files(outdir)
         copy_tree(monitor_path, outdir)
 
     env._max_episode_steps = steps  # env returns done after _max_episode_steps
     env = gym.wrappers.Monitor(env, outdir, force=not continue_execution, resume=continue_execution)
-
+    print("valores guardados -----------------")
+    print(last100ScoresIndex,stepCounter,last100Filled,highest_reward)
     last100Scores = [0] * 100
-    last100ScoresIndex = 0
-    last100Filled = False
-    stepCounter = 0
-    highest_reward = 0
     rospy.logwarn("Number of episodes:"+str(epochs)+" Steps: "+str(steps))
     start_time = time.time()
     print("Number of episodes",epochs)
@@ -227,10 +236,12 @@ if __name__ == '__main__':
                         # save simulation parameters.
                         parameter_keys = ['epochs', 'steps', 'updateTargetNetwork', 'explorationRate', 'minibatch_size',
                                             'learnStart', 'learningRate', 'discountFactor', 'memorySize',
-                                            'network_inputs', 'network_outputs', 'network_structure', 'current_epoch']
+                                            'network_inputs', 'network_outputs', 'network_structure', 'current_epoch','stepCounter','last100ScoresIndex',
+                                            'last100Filled','highest_reward']
                         parameter_values = [epochs, steps, updateTargetNetwork, explorationRate, minibatch_size,
                                             learnStart, learningRate, discountFactor, memorySize, network_inputs,
-                                            network_outputs, network_structure, epoch]
+                                            network_outputs, network_structure, epoch,stepCounter,last100ScoresIndex,
+                                            last100Filled,highest_reward]
                         parameter_dictionary = dict(zip(parameter_keys, parameter_values))
                         with open(path + str(epoch) + '.json', 'w') as outfile:
                             json.dump(parameter_dictionary, outfile)
