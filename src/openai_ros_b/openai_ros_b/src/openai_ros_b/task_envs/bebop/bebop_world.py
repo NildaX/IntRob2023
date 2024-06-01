@@ -252,22 +252,29 @@ class BebopWorldEnv(bebop_env.BebopEnv):
     def _is_done(self,observations):
         #---aqui esta el error, problema
         #5 encontro, 6 distancia 7 angle
+        caso_r=0
         if self.COLLISION_BAND==1:
             self._episode_done=True
             self.episode_failure = True
             self.episode_success = False
+            self.cumulated_episode_reward+=(-1000) ##colision
+            caso_r=1
         else:
-            if self.repre_state[5]==1 and self.repre_state[6]<=0.9:
+            if self.repre_state[5]==1 and self.repre_state[6]<=1.3:
                 self._episode_done=True
                 self.episode_failure = False
                 self.episode_success = True
                 rospy.logerr("Bebop True distance, angle ==>" + str(self.repre_state[6])+ ',' + str(self.repre_state[7]))
+                self.cumulated_episode_reward+=1000
+                caso_r=2
             else:
-                if self.repre_state[8]<0.15:
+                if self.repre_state[8]<0.15 or self.repre_state[8]>3:
                     self._episode_done=True
                     self.episode_failure = True
                     self.episode_success = False
                     rospy.logerr("ALtitude so near to the ground ==>")
+                    self.cumulated_episode_reward+=(-1000)
+                    caso_r=3
                 else:
                     self._episode_done=False
                     self.episode_failure = True
@@ -321,22 +328,22 @@ class BebopWorldEnv(bebop_env.BebopEnv):
             self._episode_done = True
         '''
         rospy.logerr("_episode_done ==>" + str(self._episode_done))
-        return self._episode_done
+        return self._episode_done, caso_r
 
     def _compute_reward(self, observations,done):
         #compute_state=
-        print("compute reward", self.repre_state)
-        print("discrete", self.repre_state_discrete)
+        #print("compute reward", self.repre_state)
+        #print("discrete", self.repre_state_discrete)
         visibility_reward=100*self.repre_state[5]
         if self.repre_state[5]==1:
-            distance_reward=-self.repre_state[6]*10 #distance_to_goal
-            angle_reward=-(abs(self.repre_state[7]))*10 #angle_to_goal
+            distance_reward=-self.repre_state[6] #distance_to_goal
+            angle_reward=-(abs(self.repre_state[7])) #angle_to_goal
         else:
-            distance_reward=-100 #distance_to_goal
-            angle_reward=-100 #angle_to_goal
-        distances_reward=(self.repre_state[0]+self.repre_state[1]+self.repre_state[2])*5
-        print(distance_reward,angle_reward,visibility_reward,distances_reward)
-        reward = round(distance_reward + angle_reward + visibility_reward+distances_reward,2)
+            distance_reward=-9 #distance_to_goal
+            angle_reward=0 #angle_to_goal
+        #distances_reward=(self.repre_state[0]+self.repre_state[1]+self.repre_state[2])*5
+        #print(distance_reward,angle_reward,visibility_reward)
+        reward = round(distance_reward + angle_reward + visibility_reward,2)
         rospy.logdebug("reward=" + str(reward))
         self.cumulated_reward += reward
         rospy.logdebug("Cumulated_reward=" + str(self.cumulated_reward))

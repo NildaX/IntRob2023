@@ -73,7 +73,7 @@ class RobotGazeboEnv(gym.Env):
         obs = self._get_obs()
         _obs = numpy.array(obs)
         #print(obs.shape)
-        done = self._is_done(obs)
+        done,caso_reward = self._is_done(obs)
         info = {}
         repre_state_step=self._get_repre_state()
         self.repre_state_gazebo = ','.join(map(str, repre_state_step))
@@ -82,6 +82,11 @@ class RobotGazeboEnv(gym.Env):
         episode_status = self._get_episode_success_failure_status()
         self.episode_success = episode_status[0]
         self.episode_failure = episode_status[1]
+        if caso_reward==1 or caso_reward==3:
+            reward+=(-1000) #colision o altitud
+        else:
+            if caso_reward==2:
+                reward+=1000
         self.cumulated_episode_reward += reward
         self.cumulated_episode_step += 1
 
