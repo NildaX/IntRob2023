@@ -26,6 +26,7 @@ from pgmpy.models import BayesianModel
 from pgmpy.estimators import HillClimbSearch, BicScore, BayesianEstimator
 import networkx as nx
 from pgmpy.inference import VariableElimination
+from itertools import permutations
 def detect_monitor_files(training_dir):
     return [os.path.join(training_dir, f) for f in os.listdir(training_dir) if f.startswith('openaigym')]
 
@@ -95,7 +96,7 @@ if __name__ == '__main__':
     gazebo_world_launch_name = env.get_gazebo_world_launch_name()
     utils.remove_logfile_if_exist(outdir, gazebo_world_launch_name)
 
-    continue_execution = True
+    continue_execution = False
     # fill this if continue_execution=True
     resume_epoch = '220'  # change to epoch to continue from
     resume_path = path + resume_epoch
