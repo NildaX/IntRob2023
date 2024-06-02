@@ -60,6 +60,7 @@ if __name__ == '__main__':
     node_of_interest = 'reward'
     models=[0,0,0,0,0,0,0,0]
     inference=[0,0,0,0,0,0,0,0]
+    time_t=['section_0','section_1','section_2','section_3','section_4','rearch_goal','angle_goal','altitude','distance_goal']
 
     
     random_number = random.randint(10000, 15000)
@@ -264,6 +265,11 @@ if __name__ == '__main__':
                         if (len(best_model[i].edges())>0):
                             graphs[i] = nx.DiGraph()
                             graphs[i].add_edges_from(best_model[i].edges())  # Add edges from the Bayesian model
+
+                            ##---- quit the sincrono edges
+                            for (u, v) in permutations(set(time_t), 2):  # Use permutations to consider all directional pairs
+                                if graphs[i].has_edge(u, v):
+                                    graphs[i].remove_edge(u, v)
                             # Save the DataFrame to a CSV file for external viewing
                             adj_matrix_sp = nx.adjacency_matrix(graphs[i]) 
                             adj_matrixs[i] = pd.DataFrame(adj_matrix_sp.todense(),
