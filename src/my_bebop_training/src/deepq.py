@@ -200,50 +200,58 @@ class DeepQ:
         #quitamos los que no estan conectados, es decir no aparecen en la red ya que sino esta
         #manda un error al poner la evidenciad ese nodo
         
+        if hay_modelo>0:
+            prob_action=[0,0,0,0,0,0,0,0]
+            prob_action_n=[0,0,0,0,0,0,0,0]
+            for i in range(8): ##para todas las acciones
+                if unconnected_nodes[i]==0:
+                    prob_action[i]=0
+                else:
+                    try:
+                        evidence = {key: value for key, value in evidence.items() if key not in unconnected_nodes[i]} #preguntarse que hacer cuando es vacio
+                        filtered_evidence= {key: value for key, value in evidence.items() if key in depend_reward[i]}
+                        result = inference[i].query(variables=['reward'], evidence=filtered_evidence)
+                        for state in result.state_names['reward']:
+                            #print(f"reward = {state}: {result.values[result.state_names['reward'].index(state)]}")
+                            if (state==1):
+                                prob_action[i]=result.values[result.state_names['reward'].index(state)]
+                            else:
+                                prob_action_n[i]=result.values[result.state_names['reward'].index(0)]
+                    except:
+                            prob_action[i]=0
+                            prob_action_n[i]=0
 
-
-
-
-        #--- con cierta probabilidad, accion aleatoria, max q values, accion de bayes
+        prob_caulsa_model=0.8
+        umbral_prob=0.75
 
         rand = random.random()
         if rand < explorationRate:
-
-            #
-            if hay_modelo>0:
-                prob_action=[0,0,0,0,0,0,0,0]
-                for i in range(8): ##para todas las acciones
-                    if unconnected_nodes[i]==0:
-                        prob_action[i]=0
-                    else:
-                        try:
-                            evidence = {key: value for key, value in evidence.items() if key not in unconnected_nodes[i]} #preguntarse que hacer cuando es vacio
-                            filtered_evidence= {key: value for key, value in evidence.items() if key in depend_reward[i]}
-                            result = inference[i].query(variables=['reward'], evidence=filtered_evidence)
-                            for state in result.state_names['reward']:
-                                #print(f"reward = {state}: {result.values[result.state_names['reward'].index(state)]}")
-                                if (state==1):
-                                    prob_action[i]=result.values[result.state_names['reward'].index(state)]
-                        except:
-                             prob_action[i]=0
-
-                max_index = prob_action.index(max(prob_action))
-                print("Index oforwardf the greatest number:", max_index)
-                action=max_index
-            else:
-                action = np.random.randint(0, self.output_size)
-
+            print("accion aleatoria")
+            action = np.random.randint(0, self.output_size)
         else:
+            print("qvalues")
             action = self.getMaxIndex(qValues)
-            ##--------------------------------------
-            '''
-            if action==0:
-                rospy.logwarn("Action: Forward and Safe: Safe")
-                if self.save_forward==0:
-                    rospy.logerr("Action: Forward and Safe: NOT Safe")
-                    action = np.random.randint(1, self.output_size)
-            '''
-            ###---------------------------------------
+            if hay_modelo>0:
+                rand = random.random()
+                if rand < prob_caulsa_model:
+                    print("consular al modelo")
+                    ##si lleva a una negativa, debe seleccionarse una aleatoria con que no sea esa
+                    if prob_action_n[action]>umbral_prob:
+                        print("accion selecciona va a negativa! seleccionar otra",prob_action_n[action],prob_action_n,action )
+                        action_negative=action
+                        while action==action_negative:
+                            action=np.random.randint(0, self.output_size)
+                    else:
+                        #si es una buena probabilidad de recibir mejor recompensa la toma
+                        if prob_action[action]>umbral_prob:
+                            action=action
+                            print("action con buena probabilidad de maximizar")
+                        #sino, seleccionar la que tenga mas del modelo causal?
+                        else:
+                            print("accion con mala probabilidad de mazimizar, mejor seleccionar la que tenga mayor probablidad",prob_action[action],prob_action,action)
+                            max_index = prob_action.index(max(prob_action))
+                            action=max_index
+        
         return action
 
     def selectActionByProbability(self, qValues, bias):

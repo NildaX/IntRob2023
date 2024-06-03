@@ -61,7 +61,6 @@ if __name__ == '__main__':
     pkg_path = rospack.get_path('bebop_openai_ros_example')
     outdir = pkg_path + '/testing_results/dqlearn'
     path = pkg_path + '/testing_results/dqlearn/bebop_'
-    plotter = liveplot.LivePlot(outdir)
     env = wrappers.Monitor(env, outdir, force=True)
     rospy.loginfo("Monitor Wrapper started")
 
@@ -71,7 +70,7 @@ if __name__ == '__main__':
 
     continue_execution = True
     # fill this if continue_execution=True
-    resume_epoch = '420'  # change to epoch to continue from
+    resume_epoch = '40'  # change to epoch to continue from
     resume_path = path + resume_epoch
     weights_path = resume_path + '.h5'
     monitor_path = outdir  # resume_path
@@ -80,7 +79,7 @@ if __name__ == '__main__':
     # Load weights, monitor info and parameter info.
     with open(params_json) as outfile:
         d = json.load(outfile)
-        epochs = d.get('epochs') + 10
+        epochs = d.get('current_epoch') + 10
         steps = d.get('steps')
         updateTargetNetwork = d.get('updateTargetNetwork')
         explorationRate = -1  # d.get('explorationRate')
@@ -128,7 +127,7 @@ if __name__ == '__main__':
             _observation = numpy.array(_observation)
             state_discre=env.return_state_discrete()
             qValues = deepQ.getQValues(_observation)
-            action = deepQ.selectAction(qValues, explorationRate,state_discre)
+            action = deepQ.selectAction(qValues, explorationRate,previous_dstate,unconnected_nodes,depend_reward,inference,hay_modelo)
             newObservation,reward, done, info = env.step(action)
             success_episode, failure_episode = env.get_episode_status()
             cumulated_reward += reward
