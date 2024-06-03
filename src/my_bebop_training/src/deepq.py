@@ -40,7 +40,6 @@ class DeepQ:
         self.discountFactor = discountFactor
         self.learnStart = learnStart
         self.learningRate = learningRate
-        self.Ovr = rospy.Subscriber('/turtlebot/save', Int8, self.flag)
         self.save_forward=1
         os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
