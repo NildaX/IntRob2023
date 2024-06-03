@@ -108,7 +108,7 @@ class DeepQ:
         model.summary()
         return model
     def createModel(self, hiddenLayers, activationType, learningRate):
-        inputs = layers.Input(shape=(1,3200))
+        inputs = layers.Input(shape=(3200))
         layer5 = layers.Dense(512, activation="relu")(inputs)
         action = layers.Dense(8, activation="linear")(layer5)
         model=keras.Model(inputs=inputs, outputs=action)
