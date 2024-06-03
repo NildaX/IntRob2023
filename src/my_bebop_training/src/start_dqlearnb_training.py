@@ -88,7 +88,6 @@ if __name__ == '__main__':
     pkg_path = rospack.get_path('bebop_openai_ros_example')
     outdir = pkg_path + '/training_results/dqlearn'
     path = pkg_path + '/training_results/dqlearn/bebop_'
-    plotter = liveplot.LivePlot(outdir)
     env = wrappers.Monitor(env, outdir, force=True)
     rospy.loginfo("Monitor Wrapper started")
 
