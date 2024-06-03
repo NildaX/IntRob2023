@@ -239,7 +239,8 @@ if __name__ == '__main__':
                                             'last100Filled','highest_reward']
                         parameter_values = [epochs, steps, updateTargetNetwork, explorationRate, minibatch_size,
                                             learnStart, learningRate, discountFactor, memorySize, network_inputs,
-                                            network_outputs, network_structure, epoch]
+                                            network_outputs, network_structure, epoch, stepCounter,last100ScoresIndex,
+                                            last100Filled,highest_reward]
                         parameter_dictionary = dict(zip(parameter_keys, parameter_values))
                         with open(path + str(epoch) + '.json', 'w') as outfile:
                             json.dump(parameter_dictionary, outfile)
