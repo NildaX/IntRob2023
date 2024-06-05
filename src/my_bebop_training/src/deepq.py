@@ -188,37 +188,10 @@ class DeepQ:
             return reward + self.discountFactor * self.getMaxQ(qValuesNewState)
 
     # select the action with the highest Q value
-    def selectAction(self, qValues, explorationRate,disc_state,unconnected_nodes,depend_reward,inference,hay_modelo):
+    def selectAction(self, qValues, explorationRate,prob_action,prob_action_n,hay_modelo):
         #--aqui debe de decidir si elegir la accion de la red o no
-        evidence = {'section_0':disc_state[0],'section_1':disc_state[1],
-                    'section_2':disc_state[2],'section_3':disc_state[3],
-                    'section_4':disc_state[4], 'rearch_goal':disc_state[5],
-                    'distance_goal':disc_state[6],'angle_goal':disc_state[7],
-                    'altitude': disc_state[8],
-                    }
         #quitamos los que no estan conectados, es decir no aparecen en la red ya que sino esta
         #manda un error al poner la evidenciad ese nodo
-        
-        if hay_modelo>0:
-            prob_action=[0,0,0,0,0,0,0,0]
-            prob_action_n=[0,0,0,0,0,0,0,0]
-            for i in range(8): ##para todas las acciones
-                if unconnected_nodes[i]==0:
-                    prob_action[i]=0
-                else:
-                    try:
-                        evidence = {key: value for key, value in evidence.items() if key not in unconnected_nodes[i]} #preguntarse que hacer cuando es vacio
-                        filtered_evidence= {key: value for key, value in evidence.items() if key in depend_reward[i]}
-                        result = inference[i].query(variables=['reward'], evidence=filtered_evidence)
-                        for state in result.state_names['reward']:
-                            #print(f"reward = {state}: {result.values[result.state_names['reward'].index(state)]}")
-                            if (state==1):
-                                prob_action[i]=result.values[result.state_names['reward'].index(state)]
-                            else:
-                                prob_action_n[i]=result.values[result.state_names['reward'].index(0)]
-                    except:
-                            prob_action[i]=0
-                            prob_action_n[i]=0
 
         prob_caulsa_model=0.8
         umbral_prob=0.75

@@ -175,6 +175,9 @@ if __name__ == '__main__':
     deepQ.printNetwork()
     #print("-----------before epoch----------------")
     hay_modelo=0
+    update_networkb=100
+    prob_action=[0,0,0,0,0,0,0,0]
+    prob_action_n=[0,0,0,0,0,0,0,0]
     for epoch in range(current_epoch + 1, epochs + 1, 1):
         print("Episode Number:",epoch)
         print("\n")
@@ -190,6 +193,7 @@ if __name__ == '__main__':
         #rospy.sleep(100)
         #print("finalizo")
         # run until env returns done
+        
         while not done:
             #print("while")
             rospy.logwarn("Episode Steps: " + str(episode_step))
@@ -202,7 +206,7 @@ if __name__ == '__main__':
             previous_dstate=env.return_state_discrete()
             previous_state=env.return_state_()
 
-            action = deepQ.selectAction(qValues, explorationRate,previous_dstate,unconnected_nodes,depend_reward,inference,hay_modelo)
+            action = deepQ.selectAction(qValues, explorationRate,prob_action,prob_action_n,hay_modelo)
             #print("action",action)
             newObservation, reward, done, info = env.step(action)
 
@@ -242,7 +246,7 @@ if __name__ == '__main__':
 
             #---- hacerlo cada 100 esta bien? en un episodio de 200 se harian dos actualizaciones 
             print("len",len(archivo_discreto))
-            if len(archivo_discreto)% 100 == 0:
+            if len(archivo_discreto)% update_networkb == 0:
                 print("----------actualizar red bayesiana---------------")
                 model_actions=[]
                 for i in range(8):
@@ -252,7 +256,7 @@ if __name__ == '__main__':
                     print(len(model_actions[i]))
                     if len(model_actions[i])>0:
                         bic_score = BicScore(model_actions[i])
-                        if (len(archivo_discreto)==100):
+                        if (len(archivo_discreto)==update_networkb):
                             hcs = HillClimbSearch(model_actions[i])
                         else:
                             if (graphs[i]!=0):
@@ -308,6 +312,32 @@ if __name__ == '__main__':
                                 depend_reward[i]=[]
                             inference[i] = VariableElimination(models[i])
                 hay_modelo=1
+                evidence = {'section_0':previous_dstate[0],'section_1':previous_dstate[1],
+                    'section_2':previous_dstate[2],'section_3':previous_dstate[3],
+                    'section_4':previous_dstate[4], 'rearch_goal':previous_dstate[5],
+                    'distance_goal':previous_dstate[6],'angle_goal':previous_dstate[7],
+                    'altitude': previous_dstate[8],
+                    }
+                
+                for i in range(8): ##para todas las acciones
+                    if unconnected_nodes[i]==0:
+                        prob_action[i]=0
+                    else:
+                        try:
+                            evidence = {key: value for key, value in evidence.items() if key not in unconnected_nodes[i]} #preguntarse que hacer cuando es vacio
+                            filtered_evidence= {key: value for key, value in evidence.items() if key in depend_reward[i]}
+                            result = inference[i].query(variables=['reward'], evidence=filtered_evidence)
+                            for state in result.state_names['reward']:
+                                #print(f"reward = {state}: {result.values[result.state_names['reward'].index(state)]}")
+                                if (state==1):
+                                    prob_action[i]=result.values[result.state_names['reward'].index(state)]
+                                else:
+                                    prob_action_n[i]=result.values[result.state_names['reward'].index(0)]
+                        except:
+                                prob_action[i]=0
+                                prob_action_n[i]=0
+                print("probs",prob_action,prob_action_n)
+                
 
 
 
