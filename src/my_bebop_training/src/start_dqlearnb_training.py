@@ -20,7 +20,13 @@ from openai_ros_b.openai_ros_common import StartOpenAI_ROS_Environment
 
 import utils
 from distutils.dir_util import copy_tree
-
+import numpy as np
+import pandas as pd
+from pgmpy.models import BayesianModel
+from pgmpy.estimators import HillClimbSearch, BicScore, BayesianEstimator
+import networkx as nx
+from pgmpy.inference import VariableElimination
+from itertools import permutations
 
 def detect_monitor_files(training_dir):
     return [os.path.join(training_dir, f) for f in os.listdir(training_dir) if f.startswith('openaigym')]
@@ -42,12 +48,30 @@ if __name__ == '__main__':
 
     ##-------
     ##-------
+    model_actions=[]
+    graphs=[0,0,0,0,0,0,0,0]
+    best_model=[0,0,0,0,0,0,0,0]
+    adj_matrixs=[0,0,0,0,0,0,0,0]
+    nodes_with_outgoing_edges=[0,0,0,0,0,0,0,0]
+    nodes_with_incoming_edges=[0,0,0,0,0,0,0,0]
+    depend_reward=[0,0,0,0,0,0,0,0]
+    unconnected_nodes=[0,0,0,0,0,0,0,0]
+    # Node of interest
+    node_of_interest = 'reward'
+    models=[0,0,0,0,0,0,0,0]
+    inference=[0,0,0,0,0,0,0,0]
+    time_t=['section_0','section_1','section_2','section_3','section_4','rearch_goal','angle_goal','altitude','distance_goal']
+
+
     random_number = random.randint(10000, 15000)
     port_gazebo = random_number + 1  # os.environ["ROS_PORT_SIM"]
     os.environ["GAZEBO_MASTER_URI"] = "http://localhost:" + str(port_gazebo)
 
     rospy.init_node('example_bebop_dqlearn',
                     anonymous=True, log_level=rospy.WARN)
+
+    archivo=pd.DataFrame(columns=['episode','section_0','section_1','section_2','section_3','section_4','see_goal','distance_goal','angle_goal','altitude','section_0_n','section_1_n','section_2_n','section_3_n','section_4_n','see_goal_n','distance_goal_n','angle_goal_n','altitude_n',"action","reward_acumulated","reward"])
+    archivo_discreto = pd.DataFrame(columns=['episode','section_0','section_1','section_2','section_3','section_4','see_goal','distance_goal','angle_goal','altitude','section_0_n','section_1_n','section_2_n','section_3_n','section_4_n','see_goal_n','distance_goal_n','angle_goal_n','altitude_n',"action","reward_acumulated","reward"])
 
     # Init openai_ros_b ENV
     task_and_robot_environment_name = rospy.get_param(
@@ -154,6 +178,12 @@ if __name__ == '__main__':
     #print("finalizo")
     # start iterating from 'current epoch'.
     deepQ.printNetwork()
+
+    hay_modelo=0
+    update_networkb=100
+    prob_action=[0,0,0,0,0,0,0,0]
+    prob_action_n=[0,0,0,0,0,0,0,0]
+
     #print("-----------before epoch----------------")
     print("updateTargetNetwork",updateTargetNetwork)
     for epoch in range(current_epoch + 1, epochs + 1, 1):
@@ -182,7 +212,7 @@ if __name__ == '__main__':
             #print("before action")
             
             print("discrete desde start training",)
-            action = deepQ.selectAction(qValues, explorationRate,state_discre)
+            action = deepQ.selectAction(qValues, explorationRate,prob_action,prob_action_n,hay_modelo)
             #print("action",action)
             newObservation,reward, done, info = env.step(action)
             #print("after newObservation")
@@ -203,6 +233,109 @@ if __name__ == '__main__':
                     deepQ.learnOnMiniBatch(minibatch_size, True)
 
             _observation = newObservation
+
+            reward_d = 0 if reward < 0 else 1
+            reward_ad = 0 if cumulated_reward < 0 else 1
+
+            new_row = {'episode':epoch,'section_0': previous_state[0],'section_1': previous_state[1],'section_2': previous_state[2],'section_3': previous_state[3],'section_4': previous_state[4], 'see_goal': previous_state[5],'distance_goal':previous_state[6],'angle_goal':previous_state[7],'altitude':previous_state[8],'section_0_n':array_states [0],'section_1_n':array_states [1],'section_2_n':array_states [2],'section_3_n':array_states [3],'section_4_n':array_states [4],'see_goal_n':array_states [5],'distance_goal_n':array_states [6],'angle_goal_n':array_states [7],'altitude_n':array_states [8],"action": action, "reward_acumulated": cumulated_reward,"reward": reward}
+            new_row_d = {'episode':epoch,'section_0': previous_dstate[0],'section_1': previous_dstate[1],'section_2': previous_dstate[2],'section_3': previous_dstate[3],'section_4': previous_dstate[4], 'see_goal': previous_dstate[5],'distance_goal':previous_dstate[6],'angle_goal':previous_dstate[7],'altitude':previous_dstate[8],'section_0_n':array_states_discrete [0],'section_1_n':array_states_discrete [1],'section_2_n':array_states_discrete [2],'section_3_n':array_states_discrete [3],'section_4_n':array_states_discrete [4],'see_goal_n':array_states_discrete [5],'distance_goal_n':array_states_discrete [6],'angle_goal_n':array_states_discrete [7],'altitude_n':array_states_discrete [8],"action": action, "reward_acumulated": reward_ad, "reward":reward_d}
+
+            archivo.loc[len(archivo)] = new_row
+            archivo_discreto.loc[len(archivo_discreto)] = new_row_d
+
+            print("len",len(archivo_discreto))
+            if len(archivo_discreto)% update_networkb == 0:
+                print("----------actualizar red bayesiana---------------")
+                model_actions=[]
+                for i in range(8):
+                    model_actions.append(archivo_discreto[archivo_discreto['action'] == i])
+                    # model_actions es solo el archivo csv
+                    ##--- esto es una vez que ya se ha dividido por acciones
+                    print(len(model_actions[i]))
+                    if len(model_actions[i])>0:
+                        bic_score = BicScore(model_actions[i])
+                        if (len(archivo_discreto)==update_networkb):
+                            hcs = HillClimbSearch(model_actions[i])
+                        else:
+                            if (graphs[i]!=0):
+                                initial_model = BayesianModel(graphs[i].edges())
+                                hcs = HillClimbSearch(model_actions[i],initial_model)
+                            else:
+                                hcs = HillClimbSearch(model_actions[i])
+                        best_model[i] = hcs.estimate(scoring_method=bic_score)
+                        print(best_model[i].edges())
+                        if (len(best_model[i].edges())>0):
+                            graphs[i] = nx.DiGraph()
+                            graphs[i].add_edges_from(best_model[i].edges())  # Add edges from the Bayesian model
+
+                            ##---- quit the sincrono edges
+                            for (u, v) in permutations(set(time_t), 2):  # Use permutations to consider all directional pairs
+                                if graphs[i].has_edge(u, v):
+                                    graphs[i].remove_edge(u, v)
+                            # Save the DataFrame to a CSV file for external viewing
+                            adj_matrix_sp = nx.adjacency_matrix(graphs[i]) 
+                            adj_matrixs[i] = pd.DataFrame(adj_matrix_sp.todense(),
+                                                        index=graphs[i].nodes(), columns=graphs[i].nodes())
+                            print(adj_matrixs[i])
+                            adj_matrixs[i].to_csv('/home/nilda/Documentos/AdjMatrix/action_'+str(i)+'.csv')
+
+                            models[i] = BayesianModel(best_model[i].edges())
+                            models[i].fit(model_actions[i], estimator=BayesianEstimator, prior_type="BDeu") ##--- aqui ya se tienen las cpt
+
+                            all_nodes = set(model_actions[i].columns)  # Assuming each column represents a node
+                            edges = best_model[i].edges()
+                            # Find all unique nodes with edges
+                            nodes_with_outgoing_edges[i] = {edge[0] for edge in edges}  # Nodes with outgoing edges
+                            nodes_with_incoming_edges[i] = {edge[1] for edge in edges}  # Nodes with incoming edges
+                            # Get parents (predecessors)
+                            if graphs[i].has_node(node_of_interest):
+                                parents = list(graphs[i].predecessors(node_of_interest))
+                                #print(f"Parents of {node_of_interest}:", parents)
+                                # Get children (successors)
+                                children = list(graphs[i].successors(node_of_interest))
+                                #print(f"Children of {node_of_interest}:", children)
+                                #padres de padres
+                                parents_of_parents = set()
+                                for parent in parents:
+                                    parents_of_parents.update(get_unique_parents(graphs[i], parent))
+                                # Get parents of each child
+                                parents_of_children = set()
+                                for child in children:
+                                    parents_of_children.update(get_unique_parents(graphs[i], child))
+                                # Convert lists to sets and take the union
+                                depend_reward[i] = list(set(parents) | set(children)| parents_of_children | parents_of_parents)
+                                connected_nodes = nodes_with_outgoing_edges[i].union(nodes_with_incoming_edges[i])
+                                unconnected_nodes[i] = all_nodes - connected_nodes
+                            else:
+                                depend_reward[i]=[]
+                            inference[i] = VariableElimination(models[i])
+                hay_modelo=1
+                evidence = {'section_0':previous_dstate[0],'section_1':previous_dstate[1],
+                    'section_2':previous_dstate[2],'section_3':previous_dstate[3],
+                    'section_4':previous_dstate[4], 'rearch_goal':previous_dstate[5],
+                    'distance_goal':previous_dstate[6],'angle_goal':previous_dstate[7],
+                    'altitude': previous_dstate[8],
+                    }
+                
+                for i in range(8): ##para todas las acciones
+                    if unconnected_nodes[i]==0:
+                        prob_action[i]=0
+                    else:
+                        try:
+                            evidence = {key: value for key, value in evidence.items() if key not in unconnected_nodes[i]} #preguntarse que hacer cuando es vacio
+                            filtered_evidence= {key: value for key, value in evidence.items() if key in depend_reward[i]}
+                            result = inference[i].query(variables=['reward'], evidence=filtered_evidence)
+                            for state in result.state_names['reward']:
+                                #print(f"reward = {state}: {result.values[result.state_names['reward'].index(state)]}")
+                                if (state==1):
+                                    prob_action[i]=result.values[result.state_names['reward'].index(state)]
+                                else:
+                                    prob_action_n[i]=result.values[result.state_names['reward'].index(0)]
+                        except:
+                                prob_action[i]=0
+                                prob_action_n[i]=0
+                print("probs",prob_action,prob_action_n)
+                
 
             if done:
                 data = [epoch, success_episode, failure_episode, cumulated_reward, episode_step + 1]
@@ -244,6 +377,8 @@ if __name__ == '__main__':
                         parameter_dictionary = dict(zip(parameter_keys, parameter_values))
                         with open(path + str(epoch) + '.json', 'w') as outfile:
                             json.dump(parameter_dictionary, outfile)
+                        archivo.to_csv('/home/nilda/Documentos/Resultados/rewards.csv', index=False)
+                        archivo_discreto.to_csv('/home/nilda/Documentos/Resultados/rewards_discreto.csv', index=False)
 
             stepCounter += 1
             if stepCounter % updateTargetNetwork == 0:
