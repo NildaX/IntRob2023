@@ -193,6 +193,8 @@ class DeepQ:
         #quitamos los que no estan conectados, es decir no aparecen en la red ya que sino esta
         #manda un error al poner la evidenciad ese nodo
 
+
+
         prob_caulsa_model=0.8
         umbral_prob=0.75
 

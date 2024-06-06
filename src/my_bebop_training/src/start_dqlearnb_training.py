@@ -61,7 +61,7 @@ if __name__ == '__main__':
     node_of_interest = 'reward'
     models=[0,0,0,0,0,0,0,0]
     inference=[0,0,0,0,0,0,0,0]
-    time_t=['section_0','section_1','section_2','section_3','section_4','rearch_goal','angle_goal','altitude','distance_goal']
+    time_t=['section_0','section_1','section_2','section_3','section_4','see_goal','angle_goal','altitude','distance_goal']
 
     
     random_number = random.randint(10000, 15000)
@@ -95,9 +95,9 @@ if __name__ == '__main__':
     gazebo_world_launch_name = env.get_gazebo_world_launch_name()
     utils.remove_logfile_if_exist(outdir, gazebo_world_launch_name)
 
-    continue_execution = False
+    continue_execution = True
     # fill this if continue_execution=True
-    resume_epoch = '220'  # change to epoch to continue from
+    resume_epoch = '10'  # change to epoch to continue from
     resume_path = path + resume_epoch
     weights_path = resume_path + '.h5'
     monitor_path = outdir  # resume_path
@@ -127,12 +127,14 @@ if __name__ == '__main__':
 
         deepQ = deepq.DeepQ(network_inputs, network_outputs, memorySize, discountFactor, learningRate, learnStart)
         deepQ.initNetworks(network_structure)
+        hay_modelo=0
+        
     else:
         # Load weights, monitor info and parameter info.
         # ADD TRY CATCH fro this else
         with open(params_json) as outfile:
             d = json.load(outfile)
-            epochs = 240 #d.get('epochs') + 5
+            epochs = 30 #d.get('epochs') + 5
             steps = d.get('steps')
             updateTargetNetwork = d.get('updateTargetNetwork')
             explorationRate = d.get('explorationRate')
@@ -157,6 +159,67 @@ if __name__ == '__main__':
         clear_monitor_files(outdir)
         copy_tree(monitor_path, outdir)
 
+        ##---abrir archivos ya hechos
+        archivo = pd.read_csv('/home/nilda/Documentos/Resultados/rewards.csv')
+        archivo_discreto=pd.read_csv('/home/nilda/Documentos/Resultados/rewards_discreto.csv')
+        hay_modelo=1
+        model_actions=[]
+        print("------------recuperar archivos de  lo guardado-------------")
+        for i in range(8):        
+            model_actions.append(archivo_discreto[archivo_discreto['action'] == i])
+            hcs = HillClimbSearch(model_actions[i])
+            bic_score = BicScore(model_actions[i])
+            best_model[i] = hcs.estimate(scoring_method=bic_score)
+            graphs[i] = nx.DiGraph()
+            graphs[i].add_edges_from(best_model[i].edges()) 
+            if (len(best_model[i].edges())>0):
+                graphs[i] = nx.DiGraph()
+                graphs[i].add_edges_from(best_model[i].edges())  # Add edges from the Bayesian model
+
+                ##---- quit the sincrono edges
+                for (u, v) in permutations(set(time_t), 2):  # Use permutations to consider all directional pairs
+                    if graphs[i].has_edge(u, v):
+                        graphs[i].remove_edge(u, v)
+                # Save the DataFrame to a CSV file for external viewing
+                adj_matrix_sp = nx.adjacency_matrix(graphs[i]) 
+                adj_matrixs[i] = pd.DataFrame(adj_matrix_sp.todense(),
+                                            index=graphs[i].nodes(), columns=graphs[i].nodes())
+                print(adj_matrixs[i])
+                adj_matrixs[i].to_csv('/home/nilda/Documentos/AdjMatrix/action_'+str(i)+'.csv')
+
+                models[i] = BayesianModel(best_model[i].edges())
+                models[i].fit(model_actions[i], estimator=BayesianEstimator, prior_type="BDeu") ##--- aqui ya se tienen las cpt
+
+                all_nodes = set(model_actions[i].columns)  # Assuming each column represents a node
+                edges = best_model[i].edges()
+                # Find all unique nodes with edges
+                nodes_with_outgoing_edges[i] = {edge[0] for edge in edges}  # Nodes with outgoing edges
+                nodes_with_incoming_edges[i] = {edge[1] for edge in edges}  # Nodes with incoming edges
+                # Get parents (predecessors)
+                if graphs[i].has_node(node_of_interest):
+                    parents = list(graphs[i].predecessors(node_of_interest))
+                    #print(f"Parents of {node_of_interest}:", parents)
+                    # Get children (successors)
+                    children = list(graphs[i].successors(node_of_interest))
+                    #print(f"Children of {node_of_interest}:", children)
+                    #padres de padres
+                    parents_of_parents = set()
+                    for parent in parents:
+                        parents_of_parents.update(get_unique_parents(graphs[i], parent))
+                    # Get parents of each child
+                    parents_of_children = set()
+                    for child in children:
+                        parents_of_children.update(get_unique_parents(graphs[i], child))
+                    # Convert lists to sets and take the union
+                    depend_reward[i] = list(set(parents) | set(children)| parents_of_children | parents_of_parents)
+                    connected_nodes = nodes_with_outgoing_edges[i].union(nodes_with_incoming_edges[i])
+                    unconnected_nodes[i] = all_nodes - connected_nodes
+                else:
+                    depend_reward[i]=[]
+                inference[i] = VariableElimination(models[i])
+
+
+
     env._max_episode_steps = steps  # env returns done after _max_episode_steps
     env = gym.wrappers.Monitor(env, outdir, force=not continue_execution, resume=continue_execution)
 
@@ -174,10 +237,9 @@ if __name__ == '__main__':
     # start iterating from 'current epoch'.
     deepQ.printNetwork()
     #print("-----------before epoch----------------")
-    hay_modelo=0
     update_networkb=100
-    prob_action=[0,0,0,0,0,0,0,0]
-    prob_action_n=[0,0,0,0,0,0,0,0]
+
+    
     for epoch in range(current_epoch + 1, epochs + 1, 1):
         print("Episode Number:",epoch)
         print("\n")
@@ -205,6 +267,35 @@ if __name__ == '__main__':
             #---------previous
             previous_dstate=env.return_state_discrete()
             previous_state=env.return_state_()
+
+            prob_action=[0,0,0,0,0,0,0,0]
+            prob_action_n=[0,0,0,0,0,0,0,0]
+            evidence = {'section_0':previous_dstate[0],'section_1':previous_dstate[1],
+                'section_2':previous_dstate[2],'section_3':previous_dstate[3],
+                'section_4':previous_dstate[4], 'rearch_goal':previous_dstate[5],
+                'distance_goal':previous_dstate[6],'angle_goal':previous_dstate[7],
+                'altitude': previous_dstate[8],
+                }
+            print("evidence",evidence)
+            for i in range(8): ##para todas las acciones
+                if unconnected_nodes[i]==0:
+                    prob_action[i]=0
+                else:
+                    try:
+                        evidence = {key: value for key, value in evidence.items() if key not in unconnected_nodes[i]} #preguntarse que hacer cuando es vacio
+                        filtered_evidence= {key: value for key, value in evidence.items() if key in depend_reward[i]}
+                        result = inference[i].query(variables=['reward'], evidence=filtered_evidence)
+                        for state in result.state_names['reward']:
+                            #print(f"reward = {state}: {result.values[result.state_names['reward'].index(state)]}")
+                            if (state==1):
+                                prob_action[i]=result.values[result.state_names['reward'].index(state)]
+                            else:
+                                prob_action_n[i]=result.values[result.state_names['reward'].index(0)]
+                    except:
+                            prob_action[i]=0
+                            prob_action_n[i]=0
+            print("probs de esa evidencia (la evidencia cambia despues de cada step)",prob_action,prob_action_n)
+
 
             action = deepQ.selectAction(qValues, explorationRate,prob_action,prob_action_n,hay_modelo)
             #print("action",action)
@@ -312,34 +403,8 @@ if __name__ == '__main__':
                                 depend_reward[i]=[]
                             inference[i] = VariableElimination(models[i])
                 hay_modelo=1
-                evidence = {'section_0':previous_dstate[0],'section_1':previous_dstate[1],
-                    'section_2':previous_dstate[2],'section_3':previous_dstate[3],
-                    'section_4':previous_dstate[4], 'rearch_goal':previous_dstate[5],
-                    'distance_goal':previous_dstate[6],'angle_goal':previous_dstate[7],
-                    'altitude': previous_dstate[8],
-                    }
                 
-                for i in range(8): ##para todas las acciones
-                    if unconnected_nodes[i]==0:
-                        prob_action[i]=0
-                    else:
-                        try:
-                            evidence = {key: value for key, value in evidence.items() if key not in unconnected_nodes[i]} #preguntarse que hacer cuando es vacio
-                            filtered_evidence= {key: value for key, value in evidence.items() if key in depend_reward[i]}
-                            result = inference[i].query(variables=['reward'], evidence=filtered_evidence)
-                            for state in result.state_names['reward']:
-                                #print(f"reward = {state}: {result.values[result.state_names['reward'].index(state)]}")
-                                if (state==1):
-                                    prob_action[i]=result.values[result.state_names['reward'].index(state)]
-                                else:
-                                    prob_action_n[i]=result.values[result.state_names['reward'].index(0)]
-                        except:
-                                prob_action[i]=0
-                                prob_action_n[i]=0
-                print("probs",prob_action,prob_action_n)
                 
-
-
 
 
             if done:
