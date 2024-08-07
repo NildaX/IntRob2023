@@ -228,7 +228,7 @@ if __name__ == '__main__':
                         (sum(last100Scores) / len(last100Scores))) + " - Cumulated R: " + str(
                         cumulated_reward) + "   Eps=" + str(round(explorationRate, 2)) + "     Time: %d:%02d:%02d" % (
                           h, m, s))
-                    if epoch % 10 == 0:
+                    if epoch % 100 == 0:
                         # save model weights and monitoring data every 100 epochs.
                         deepQ.saveModel(path + str(epoch) + '.h5',path + str(epoch)+'_target_' + '.h5',path + str(epoch)+'_memory_' + '.pkl')
                         env._flush()
