@@ -72,7 +72,7 @@ if __name__ == '__main__':
     gazebo_world_launch_name = env.get_gazebo_world_launch_name()
     utils.remove_logfile_if_exist(outdir, gazebo_world_launch_name)
 
-    continue_execution = True
+    continue_execution = False
     # fill this if continue_execution=True
     resume_epoch = '20'  # change to epoch to continue from
     resume_path = path + resume_epoch
@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
     env._max_episode_steps = steps  # env returns done after _max_episode_steps
     env = gym.wrappers.Monitor(env, outdir, force=not continue_execution, resume=continue_execution)
-    print("valores guardados -----------------")
+    print("valores guardados -----------------,epochs, steps",epochs,steps)
     print(last100ScoresIndex,stepCounter,last100Filled,highest_reward)
     last100Scores = [0] * 100
     rospy.logwarn("Number of episodes:"+str(epochs)+" Steps: "+str(steps))
